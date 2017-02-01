@@ -5,7 +5,7 @@
 #include "Archive.h"
 #include <uuid/uuid.h>
 
-void Archive__init__(Archive* self, char* base_file_path) {
+void Archive_init(Archive* self, char* base_file_path) {
     self->n_pages = 0;
     self->page_stack = NULL;
     self->base_file_path = base_file_path;
@@ -21,7 +21,6 @@ void Archive_free(Archive* self) {
         next = next->next;
         free(last);
     }
-    free(self);
 }
 
 Errors Archive_save(Archive* self, ArchiveFiles* files) {

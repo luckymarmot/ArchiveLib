@@ -48,6 +48,6 @@ Errors Archive_add_page_by_name(Archive* self, char* filename);
 void Archive_add_page(Archive* self, ArchivePage* page);
 Errors Archive_save(Archive* self, ArchiveFiles* files);
 void Archive_free(Archive* self);
-void Archive__init__(Archive* self, char* base_file_path);
+void Archive_init(Archive* self, char* base_file_path);
 
 #endif //ARCHIVELIB_ARCHIVE_H
