@@ -27,11 +27,23 @@ typedef enum Errors
  * A HashItem that maps a key (20 bytes)
  * to a pointer in the data part of your archvie
  */
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#error "Compile with Little Endian"
+#endif
 typedef struct {
     char key[20];
     size_t data_offset;
     size_t data_size;
 } HashItem;
+
+typedef struct __attribute__((__packed__)){
+    char key[20];
+    __uint32_t data_offset;
+    __uint32_t data_size;
+} PackedHashItem;
+
+
+
 
 
 
@@ -79,4 +91,6 @@ bool HashIndex_has(HashIndex* self, char* key);
 HashItem* HashIndex_get(HashIndex* self, char* key);
 void HashItem__init_with_key__(HashItem* self, char key[20], size_t data_offset, size_t data_size);
 Errors HashIndex_set(HashIndex* self, HashItem* item);
+void HashPage_set_packed(HashPage* self, PackedHashItem* item);
+
 #endif //ARCHIVELIB_HASHINDEX_H

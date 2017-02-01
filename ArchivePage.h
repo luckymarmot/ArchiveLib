@@ -17,7 +17,7 @@
 typedef int file_descriptor;
 
 
-typedef struct ArchiveFileHeader {
+typedef struct __attribute__((__packed__)) ArchiveFileHeader  {
     unsigned short version;
     size_t header_start;
     size_t header_size;
@@ -40,14 +40,13 @@ typedef struct ArchivePage {
     char* filename;
 } ArchivePage;
 
-
-
 Errors ArchivePage__init__(
         ArchivePage* self,
         HashIndex* index,
         char* filename,
         bool new_file
 );
+
 Errors ArchivePage_save_to_disk(ArchivePage* self);
 void ArchivePage_free(ArchivePage* self);
 bool ArchivePage_has(ArchivePage* page, char* key);

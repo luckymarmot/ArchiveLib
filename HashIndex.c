@@ -170,6 +170,27 @@ void HashPage_set(HashPage* self, HashItem* item) {
 }
 
 
+static inline void PackedHashItem_unpack(PackedHashItem* self, HashItem* target) {
+    memcpy(target->key, self->key, sizeof(char[20]));
+    target->data_offset = self->data_offset;
+    target->data_size =  self->data_size;
+}
+
+
+void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
+    if (self->length + 1 >= self->allocated) {
+        // We need to expand the object
+        self->items = realloc(self->items, (sizeof(HashItem) * self->allocated * 2));
+        self->allocated = (unsigned short) (self->allocated * 2);
+    }
+
+    PackedHashItem_unpack(item, &(self->items[self->length]));
+    memcpy(&(self->items[self->length]), item, sizeof(HashItem));
+    self->length += 1;
+}
+
+
+
 
 /**
  * Create a Hash Index (empty)
