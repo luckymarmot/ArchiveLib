@@ -36,10 +36,10 @@ int main() {
     printf("Added page %s\n", filename);
     bool found = Archive_has(archive, key);
     printf("Found?%d\n", found);
-    char **data = (char**) (malloc(sizeof(char**)));
-    Errors error = Archive_get(archive, key2, data);
+    char* data = (char*) (malloc(sizeof(char*)));
+    Errors error = Archive_get(archive, key2, &data);
     printf("ERROR: %s\n", strerror(errno));
-    printf("Found? %s\n", *data);
+    printf("Found? %s\n", data);
 
     //Archive_free(archive);
 
