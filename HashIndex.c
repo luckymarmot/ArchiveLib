@@ -185,7 +185,6 @@ void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
     }
 
     PackedHashItem_unpack(item, &(self->items[self->length]));
-    memcpy(&(self->items[self->length]), item, sizeof(HashItem));
     self->length += 1;
 }
 
