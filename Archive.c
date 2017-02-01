@@ -4,7 +4,6 @@
 
 #include "Archive.h"
 #include <uuid/uuid.h>
-#include <errno.h>
 
 void Archive__init__(Archive* self, char* base_file_path) {
     self->n_pages = 0;

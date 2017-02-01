@@ -6,21 +6,12 @@
 #include <stdlib.h>
 #include <memory.h>
 
-//
-// Created by Matthaus Woolard on 26/01/2017.
-//
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <memory.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <errno.h>
 
 #include "ArchivePage.h"
-#include "HashIndex.h"
 
 Errors write_to_file(
         file_descriptor fd,
@@ -252,7 +243,7 @@ Errors ArchivePage_init_new_file_header(
     file_header->data_size = 0;
     file_header->header_size = sizeof(HashItem) * MAX_ITEMS_PER_INDEX + sizeof(PackedIndex);
     file_header->header_start = sizeof(ArchiveFileHeader);
-    file_header->data_start = file_header->header_size + file_header->header_size;
+    file_header->data_start = file_header->header_size + file_header->header_start;
     return ArchivePage_write_file_header(self, file_header);
 }
 
@@ -352,15 +343,20 @@ Errors ArchivePage_read(ArchivePage* self, HashItem* item, char** data) {
             (off_t) (self->file_header->data_start + item->data_offset)
     );
     if (error != E_SUCCESS) {
-        free(data);
+        free(*data);
         return error;
     }
-    return E_SUCCESS;
+    return E_FOUND;
 }
 
 
-Errors ArchivePage_write(ArchivePage* self, HashItem* item, char* data, size_t size) {
+Errors ArchivePage_write(
+        ArchivePage* self,
+        HashItem* item,
+        char* data,
+        size_t size) {
 
+    // The item is positioned at the end of the files data section
     item->data_offset = self->file_header->data_size;
     item->data_size = size;
 
@@ -376,7 +372,7 @@ Errors ArchivePage_write(ArchivePage* self, HashItem* item, char* data, size_t s
     }
 
     // Update the data size
-    self->file_header->data_size = self->file_header->data_size + size;
+    self->file_header->data_size += size;
 
     return E_SUCCESS;
 }
