@@ -15,20 +15,6 @@
  */
 typedef int file_descriptor;
 
-
-/**
- * A private packed structure for writing archive's file header to file.
- */
-typedef struct __attribute__((__packed__)) ArchiveFileHeader
-{
-    unsigned short          version;
-    size_t                  header_start;
-    size_t                  header_size;
-    size_t                  data_start;
-    size_t                  data_size;
-} ArchiveFileHeader;
-
-
 /**
  *
  *  ArchivePage for a given disk file
@@ -40,7 +26,7 @@ typedef struct __attribute__((__packed__)) ArchiveFileHeader
 typedef struct ArchivePage
 {
     HashIndex*              index;
-    ArchiveFileHeader*      file_header;
+    size_t                  data_size;
     file_descriptor         fd;
     char*                   filename;
 } ArchivePage;

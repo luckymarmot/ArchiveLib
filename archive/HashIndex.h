@@ -9,7 +9,8 @@
 #endif
 
 
-static const size_t MAX_ITEMS_PER_INDEX = 2000;
+#define _MAX_ITEMS_PER_INDEX 2000
+static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 
 
 /**

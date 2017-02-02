@@ -9,7 +9,6 @@
 
 #include "HashIndex.h"
 
-
 /**
  * Init A HashItem
  *
