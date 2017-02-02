@@ -10,16 +10,18 @@
 #include <Archive.h>
 
 /* A test_archive case that does nothing and succeeds. */
-static void null_test_success(void **state) {
+static void test_archive_init(void **state) {
     Archive archive;
     Archive_init(&archive, "./");
+    assert_int_equal(archive.n_pages, 0);
     Archive_free(&archive);
-    (void) state; /* unused */
 }
+
+
 
 int main(void) {
     const struct CMUnitTest tests[] = {
-            cmocka_unit_test(null_test_success),
+            cmocka_unit_test(test_archive_init),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
