@@ -2,7 +2,7 @@
 #include <uuid/uuid.h>
 
 void        Archive_init(Archive*                 self,
-                         char*                    base_file_path)
+                         const char*              base_file_path)
 {
     self->n_pages = 0;
     self->page_stack = NULL;
@@ -33,7 +33,7 @@ void        Archive_free(Archive*                 self)
     self->page_stack = NULL;
 }
 
-Errors      Archive_save(Archive*                 self,
+Errors      Archive_save(const Archive*           self,
                          char***                  _filenames,
                          size_t*                  _n_files)
 {
@@ -67,7 +67,7 @@ Errors      Archive_save(Archive*                 self,
 
 
 static inline Errors    Archive_add_page(Archive*       self,
-                                         char*          filename,
+                                         const char*    filename,
                                          bool           new_file)
 {
     // build full file path
@@ -102,7 +102,7 @@ static inline Errors    Archive_add_page(Archive*       self,
 
 
 Errors      Archive_add_page_by_name(Archive*     self,
-                                     char*        filename)
+                                     const char*  filename)
 {
     return Archive_add_page(self, filename, false);
 }
@@ -120,8 +120,8 @@ Errors      Archive_add_empty_page(Archive*       self)
 }
 
 
-bool        Archive_has(Archive*                  self,
-                        char*                     key)
+bool        Archive_has(const Archive*            self,
+                        const char*               key)
 {
     ArchiveListItem* item = self->page_stack;
     while (item != NULL) {
@@ -134,8 +134,8 @@ bool        Archive_has(Archive*                  self,
 }
 
 
-Errors      Archive_get(Archive*                  self,
-                        char*                     key,
+Errors      Archive_get(const Archive*            self,
+                        const char*               key,
                         char**                    _data,
                         size_t*                   _data_size)
 {
@@ -156,8 +156,8 @@ Errors      Archive_get(Archive*                  self,
 
 
 Errors      Archive_set(Archive*                  self,
-                        char*                     key,
-                        char*                     data,
+                        const char*               key,
+                        const char*               data,
                         size_t                    size)
 {
     Errors error;

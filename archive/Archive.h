@@ -44,7 +44,7 @@ typedef struct Archive
                        string).
  */
 void        Archive_init(Archive*                 self,
-                         char*                    base_file_path);
+                         const char*              base_file_path);
 
 /**
  Frees the archive's internal structure.
@@ -61,8 +61,8 @@ void        Archive_free(Archive*                 self);
  @param key The key to lookup (a 20 bytes binary string).
  @return A boolean representing wheather the given key has been found.
  */
-bool        Archive_has(Archive*                  self,
-                        char*                     key);
+bool        Archive_has(const Archive*            self,
+                        const char*               key);
 
 
 /**
@@ -77,8 +77,8 @@ bool        Archive_has(Archive*                  self,
  @param _data_size A pointer to the size of the read data.
  @return An error code.
  */
-Errors      Archive_get(Archive*                  self,
-                        char*                     key,
+Errors      Archive_get(const Archive*            self,
+                        const char*               key,
                         char**                    _data,
                         size_t*                   _data_size);
 
@@ -93,8 +93,8 @@ Errors      Archive_get(Archive*                  self,
  @return An error code.
  */
 Errors      Archive_set(Archive*                  self,
-                        char*                     key,
-                        char*                     data,
+                        const char*               key,
+                        const char*               data,
                         size_t                    size);
 
 /**
@@ -114,7 +114,7 @@ Errors      Archive_add_empty_page(Archive*       self);
  @return An error code.
  */
 Errors      Archive_add_page_by_name(Archive*     self,
-                                     char*        filename);
+                                     const char*  filename);
 
 /**
  Saves all pages of the archive to the file system.
@@ -126,7 +126,7 @@ Errors      Archive_add_page_by_name(Archive*     self,
  @param _n_files The number of archive files in the archive.
  @return An error code.
  */
-Errors      Archive_save(Archive*                 self,
+Errors      Archive_save(const Archive*           self,
                          char***                  _filenames,
                          size_t*                  _n_files);
 
