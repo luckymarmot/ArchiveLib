@@ -46,8 +46,15 @@ typedef struct ArchivePage
 } ArchivePage;
 
 
+/**
+ Initializes a new archive page.
+
+ @param self The archive page structure.
+ @param filename The filename of the archive.
+ @param new_file Whether the archive is a new file.
+ @return An error code.
+ */
 Errors      ArchivePage_init(ArchivePage*           self,
-                             HashIndex*             index,
                              char*                  filename,
                              bool                   new_file);
 

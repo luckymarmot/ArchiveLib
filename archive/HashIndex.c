@@ -43,9 +43,6 @@ void HashIndex_free(HashIndex* self) {
             HashPage_free(page);
         }
     }
-    //free(&self->pages);
-    free(self);
-    // Free
 }
 
 
@@ -189,18 +186,10 @@ void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
 }
 
 
-
-
-/**
- * Create a Hash Index (empty)
- *
- *
- * All pointers to pages are set to NULL!
- * @return the new hash index
- */
-void HashIndex_init(HashIndex* self) {
+void            HashIndex_init(HashIndex*               self)
+{
     self->n_items = 0;
-    memset(self->pages, 0, sizeof(HashIndex *[256]));
+    memset(self->pages, 0, sizeof(HashPage*[256]));
 }
 
 

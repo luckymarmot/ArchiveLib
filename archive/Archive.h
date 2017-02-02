@@ -36,11 +36,31 @@ typedef struct Archive
 } Archive;
 
 
+/**
+ Initializes a new archive.
+
+ @param self The archive struct to initialize.
+ @param base_file_path The base path for archive files (a null-terminated
+                       string).
+ */
 void        Archive_init(Archive*                 self,
                          char*                    base_file_path);
 
+/**
+ Frees the archive's internal structure.
+
+ @param self The archive.
+ */
 void        Archive_free(Archive*                 self);
 
+
+/**
+ Checks if the archive contains a given key.
+
+ @param self The archive.
+ @param key The key to lookup (a 20 bytes binary string).
+ @return A boolean representing wheather the given key has been found.
+ */
 bool        Archive_has(Archive*                  self,
                         char*                     key);
 
@@ -54,13 +74,24 @@ Errors      Archive_set(Archive*                  self,
                         char*                     data,
                         size_t                    size);
 
-Errors      Archive_new_page(Archive*             self);
+/**
+ Adds a new empty page to the archive.
 
+ @param self The archive.
+ @return An error code.
+ */
+Errors      Archive_add_empty_page(Archive*       self);
+
+
+/**
+ Adds a new page to the archive reading from an existing file.
+
+ @param self The archive.
+ @param filename The file path to the existing file.
+ @return An error code.
+ */
 Errors      Archive_add_page_by_name(Archive*     self,
                                      char*        filename);
-
-void        Archive_add_page(Archive*             self,
-                             ArchivePage*         page);
 
 /**
  Saves all pages of the archive to the file system.
@@ -70,10 +101,11 @@ void        Archive_add_page(Archive*             self,
                    It's the caller responsibility to free() the char** array
                    that was set to this pointer.
  @param _n_files The number of archive files in the archive.
- @return Error code.
+ @return An error code.
  */
 Errors      Archive_save(Archive*                 self,
                          char***                  _filenames,
                          size_t*                  _n_files);
+
 
 #endif //ARCHIVELIB_ARCHIVE_H

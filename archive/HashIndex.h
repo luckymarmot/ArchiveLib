@@ -73,6 +73,11 @@ typedef struct HashIndex
 
 #pragma mark HashIndex
 
+/**
+ Initializes a new empty index.
+
+ @param self The index to initialize.
+ */
 void            HashIndex_init(HashIndex*               self);
 
 void            HashIndex_free(HashIndex*               self);

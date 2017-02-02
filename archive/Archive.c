@@ -1,26 +1,36 @@
-//
-// Created by Matthaus Woolard on 31/01/2017.
-//
-
 #include "Archive.h"
 #include <uuid/uuid.h>
 
-void Archive_init(Archive* self, char* base_file_path) {
+void        Archive_init(Archive*                 self,
+                         char*                    base_file_path)
+{
     self->n_pages = 0;
     self->page_stack = NULL;
-    self->base_file_path = base_file_path;
+    
+    // copy base file path
+    size_t base_file_path_len = strlen(base_file_path);
+    self->base_file_path = malloc(base_file_path_len);
+    memcpy(self->base_file_path, base_file_path, base_file_path_len);
 }
 
-void Archive_free(Archive* self) {
+void        Archive_free(Archive*                 self)
+{
     ArchiveListItem* next = self->page_stack;
     ArchiveListItem* last = NULL;
 
     while (next != NULL) {
         ArchivePage_free(next->page);
+        free(next->page);
         last = next;
         next = next->next;
         free(last);
     }
+    
+    free(self->base_file_path);
+    
+    self->n_pages = 0;
+    self->base_file_path = NULL;
+    self->page_stack = NULL;
 }
 
 Errors      Archive_save(Archive*                 self,
@@ -54,67 +64,70 @@ Errors      Archive_save(Archive*                 self,
     return E_SUCCESS;
 }
 
-void Archive_add_page(Archive* self, ArchivePage* page) {
-    ArchiveListItem* list_item = (ArchiveListItem*) (malloc(sizeof(ArchiveListItem)));
+
+static inline Errors    Archive_add_page(Archive*       self,
+                                         char*          filename,
+                                         bool           new_file)
+{
+    // build full file path
+    char* filepath;
+    asprintf(&filepath, "%s%s", self->base_file_path, filename);
+    
+    // log
+    printf("Add archive page, new? = %d, filename = %s\n", new_file, filename);
+
+    // create the page struct
+    ArchivePage* page = (ArchivePage*)malloc(sizeof(ArchivePage));
+    Errors error = ArchivePage_init(page, filepath, new_file);
+    if (error != E_SUCCESS) {
+        free(filepath);
+        free(page);
+        return error;
+    }
+    
+    // free filepath
+    free(filepath);
+    filepath = NULL;
+
+    // add page to the list
+    ArchiveListItem* list_item = (ArchiveListItem*)malloc(sizeof(ArchiveListItem));
     list_item->next = self->page_stack;
     list_item->page = page;
     self->page_stack = list_item;
     self->n_pages += 1;
-}
-
-Errors Archive_add_page_by_name(Archive* self, char* filename) {
-    char *full_path;
-    asprintf(&full_path, "%s%s", self->base_file_path, filename);
-    printf("file %s\n", full_path);
-    ArchivePage* page = (ArchivePage*) malloc(sizeof(ArchivePage));
-    HashIndex* index = (HashIndex*) malloc(sizeof(HashIndex));
-    Errors error = ArchivePage_init(page, index, full_path, false);
-    if (error != E_SUCCESS) {
-        free(page);
-        free(index);
-        return error;
-    }
-    Archive_add_page(self, page);
-    printf("Top page object %p\n", self->page_stack);
+    
     return E_SUCCESS;
 }
 
 
+Errors      Archive_add_page_by_name(Archive*     self,
+                                     char*        filename)
+{
+    return Archive_add_page(self, filename, false);
+}
 
-Errors Archive_new_page(Archive* self) {
-    //
+
+Errors      Archive_add_empty_page(Archive*       self)
+{
+    // generate filename uuid
     uuid_t uuid;
-
-    // generate
     uuid_generate_random(uuid);
-
-    // un parse (to string)
-    char uuid_str[37];      // ex. "1b4e28ba-2fa1-11d2-883f-0016d3cca427" + "\0"
-    uuid_unparse_lower(uuid, uuid_str);
-    char *full_path;
-    asprintf(&full_path, "%s%s", self->base_file_path, uuid_str);
-    ArchivePage* page = (ArchivePage*) malloc(sizeof(ArchivePage));
-    HashIndex* index = (HashIndex*) malloc(sizeof(HashIndex));
-    Errors error = ArchivePage_init(page, index, full_path, true);
-    if (error != E_SUCCESS) {
-        free(page);
-        free(index);
-        return error;
-    }
-    Archive_add_page(self, page);
-    return E_SUCCESS;
+    char filename[37]; // ex. "1b4e28ba-2fa1-11d2-883f-0016d3cca427" + "\0"
+    uuid_unparse_lower(uuid, filename);
+    
+    return Archive_add_page(self, filename, true);
 }
 
 
 bool        Archive_has(Archive*                  self,
                         char*                     key)
 {
-    ArchiveListItem* next = self->page_stack;
-    while (next != NULL) {
-        if (ArchivePage_has(next->page, key)) {
+    ArchiveListItem* item = self->page_stack;
+    while (item != NULL) {
+        if (ArchivePage_has(item->page, key)) {
             return true;
         }
-        next = next->next;
+        item = item->next;
     }
     return false;
 }
@@ -126,16 +139,16 @@ Errors      Archive_get(Archive*                  self,
                         size_t*                   _data_size)
 {
     Errors error;
-    ArchiveListItem* next = self->page_stack;
-    while (next != NULL) {
-        error = ArchivePage_get(next->page, key, _data, _data_size);
+    ArchiveListItem* item = self->page_stack;
+    while (item != NULL) {
+        error = ArchivePage_get(item->page, key, _data, _data_size);
         if (error == E_SUCCESS) {
             return E_SUCCESS;
         }
         if (error < 0) {
             return error;
         }
-        next = next->next;
+        item = item->next;
     }
     return E_NOT_FOUND;
 }
@@ -158,7 +171,7 @@ Errors      Archive_set(Archive*                  self,
     
     // if page is full, add a new page and try again
     if (error == E_INDEX_MAX_SIZE_EXCEEDED) {
-        error = Archive_new_page(self);
+        error = Archive_add_empty_page(self);
         if (error != E_SUCCESS) {
             return error;
         }

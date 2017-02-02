@@ -16,17 +16,15 @@ int main() {
 
     Archive archive;
     Archive_init(&archive, "./");
-    Archive_new_page(&archive);
+    Archive_add_empty_page(&archive);
     Archive_set(&archive, key, "the data", 8);
     Archive_set(&archive, key2, "the other data", 14);
     size_t n_files;
     char** filenames;
     Archive_save(&archive, &filenames, &n_files);
-    char* filename = NULL;
-    for (int i = 0; i < n_files; ++i) {
-        filename = filenames[i] + 2;
-        printf("file %s\n", filenames[i]);
-    }
+    char filename[256];
+    memcpy(filename, filenames[n_files - 1] + 2, strlen(filenames[n_files - 1]) - 2);
+    printf("Archive file = %s\n", filename);
     free(filenames);
     Archive_free(&archive);
 
