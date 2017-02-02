@@ -18,7 +18,7 @@
  * @param data_offset the possition in the data archive
  * @param data_size the lenght of the data pointed to
  */
-void HashItem__init_with_key__(
+void HashItem_init_with_key(
         HashItem* self,
         char key[20],
         size_t data_offset,
@@ -56,7 +56,7 @@ void HashIndex_free(HashIndex* self) {
  * @param data_size
  * @return DataBlob*
  */
-void DataBlob__init__(DataBlob *self, char key[20], size_t data_size) {
+void DataBlob_init(DataBlob *self, char key[20], size_t data_size) {
     self->data_size = data_size;
     self->key = key;
     self->data = (char *) (malloc(sizeof(char)*data_size));
@@ -71,7 +71,7 @@ void DataBlob__init__(DataBlob *self, char key[20], size_t data_size) {
  * @param data_offset
  */
 void HashItem__init_from_data_blob__(HashItem* self, DataBlob* blob, size_t data_offset) {
-    HashItem__init_with_key__(self, blob->key, data_offset, blob->data_size);
+    HashItem_init_with_key(self, blob->key, data_offset, blob->data_size);
 }
 
 
@@ -83,7 +83,7 @@ unsigned short HASH_PAGE_ALLOCATION = 10;
  * @param allocated the number of items to prealocate
  * @return the new hash page.
  */
-void HashPage__init__(HashPage* self, unsigned short allocated) {
+void HashPage_init(HashPage* self, unsigned short allocated) {
     self->items = (HashItem*) malloc(sizeof(HashItem) * allocated);
     self->allocated = allocated;
     self->length = 0;
@@ -198,7 +198,7 @@ void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
  * All pointers to pages are set to NULL!
  * @return the new hash index
  */
-void HashIndex__init__(HashIndex* self) {
+void HashIndex_init(HashIndex* self) {
     self->items = 0;
     memset(self->pages, 0, sizeof(HashIndex *[256]));
 }
@@ -232,7 +232,7 @@ HashPage* HashIndex_get_or_create_page(HashIndex* self, char key[20]) {
         return page;
     }
     page = (HashPage*) (malloc(sizeof(HashPage)));
-    HashPage__init__(page, HASH_PAGE_ALLOCATION);
+    HashPage_init(page, HASH_PAGE_ALLOCATION);
     self->pages[key[0]] = page;
     return page;
 }
