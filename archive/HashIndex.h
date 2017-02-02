@@ -21,20 +21,6 @@ typedef struct HashItem
 
 
 /**
- * Data Blob
- *
- * Data object used for reading and writing
- * to the archive.
- */
-typedef struct DataBlob
-{
-    size_t                  data_size;
-    char*                   key;
-    char*                   data;
-} DataBlob;
-
-
-/**
  * Page of the Hash Map
  * there is 1 page for each of the first chars.
  */
@@ -80,12 +66,6 @@ HashItem*       HashIndex_get(HashIndex*                self,
 
 Errors          HashIndex_set(HashIndex*                self,
                               HashItem*                 item);
-
-
-#pragma mark HashPage
-
-void            HashPage_set(HashPage*                  self,
-                             HashItem*                  item);
 
 #pragma mark HashItem
 

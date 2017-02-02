@@ -30,7 +30,8 @@ void HashPage_free(HashPage* page) {
     free(page);
 }
 
-void HashIndex_free(HashIndex* self) {
+void            HashIndex_free(HashIndex*               self)
+{
     HashPage* page;
     for (int j = 0; j < 255; ++j) {
         page = self->pages[j];
@@ -38,32 +39,6 @@ void HashIndex_free(HashIndex* self) {
             HashPage_free(page);
         }
     }
-}
-
-
-/**
- * Init DataBlob (do not set the data)
- *
- * @param key
- * @param data_size
- * @return DataBlob*
- */
-void DataBlob_init(DataBlob *self, char key[20], size_t data_size) {
-    self->data_size = data_size;
-    self->key = key;
-    self->data = (char *) (malloc(sizeof(char)*data_size));
-}
-
-
-/**
- * Init a hash item given a data blob and offset.
- *
- * @param self
- * @param blob
- * @param data_offset
- */
-void HashItem__init_from_data_blob__(HashItem* self, DataBlob* blob, size_t data_offset) {
-    HashItem_init_with_key(self, blob->key, data_offset, blob->data_size);
 }
 
 
@@ -114,28 +89,6 @@ bool HashPage_has(HashPage* self, char key[20]) {
     return NULL != HashPage_get(self, key);
 }
 
-
-
-/**
- * Update the page
- *
- * @param self
- * @param new_item new item to push into the page.
- * @return True if updated False Otherwise
- */
-bool HashPage_update(HashPage* self, HashItem* new_item) {
-    int i = 0;
-    HashItem *item;
-    for (i = 0; i < self->length; i = i + 1) {
-        item = &self->items[i];
-        if (memcmp(item->key, new_item->key, 20) == 0) {
-            item->data_size = new_item->data_size;
-            item->data_offset = new_item->data_offset;
-            return true;
-        }
-    }
-    return false;
-}
 
 
 /**
@@ -199,23 +152,6 @@ HashPage* HashIndex_get_or_create_page(HashIndex* self, char key[20]) {
         self->pages[key[0]] = page;
     }
     return page;
-}
-
-
-/**
- *
- * Get a hash item
- *
- * @param self
- * @param key
- * @return return NULL if not found
- */
-HashItem* HashIndex_get_index_item(HashIndex* self, char key[20]) {
-    HashPage* page = HashIndex_get_page(self, key);
-    if (page == NULL) {
-        return NULL;
-    }
-    return HashPage_get(page, key);
 }
 
 
