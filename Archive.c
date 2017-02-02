@@ -36,7 +36,7 @@ Errors      Archive_save(Archive*                 self,
     int i = 0;
     while (next != NULL) {
         printf("In loop %d\n %p %s\n", i, next->page, next->page->filename);
-        error = ArchivePage_save_to_disk(next->page);
+        error = ArchivePage_save(next->page);
         if (error != E_SUCCESS) {
             printf("Failed to save!!! %d\n", error);
             printf("File not saved ERROR: %s\n", strerror(errno));

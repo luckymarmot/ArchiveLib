@@ -46,7 +46,7 @@ Errors      ArchivePage_init(ArchivePage*           self,
 
 void        ArchivePage_free(ArchivePage*           self);
 
-Errors      ArchivePage_save_to_disk(ArchivePage*   self);
+Errors      ArchivePage_save(ArchivePage*           self);
 
 bool        ArchivePage_has(ArchivePage*            page,
                             char*                   key);

@@ -302,7 +302,7 @@ Errors      ArchivePage_init(ArchivePage*           self,
 }
 
 
-Errors      ArchivePage_save_to_disk(ArchivePage*   self)
+Errors      ArchivePage_save(ArchivePage*           self)
 {
     Errors error;
     
