@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AE42F20D1E4259DC004463C5 /* Archive.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2071E4259DC004463C5 /* Archive.c */; };
-		AE42F20E1E4259DC004463C5 /* ArchivePage.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2091E4259DC004463C5 /* ArchivePage.c */; };
-		AE42F20F1E4259DC004463C5 /* HashIndex.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F20B1E4259DC004463C5 /* HashIndex.c */; };
-		AE42F2121E425A45004463C5 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2111E425A45004463C5 /* main.c */; };
+		AE42F21C1E4370B8004463C5 /* Archive.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2141E4370B8004463C5 /* Archive.c */; };
+		AE42F21D1E4370B8004463C5 /* ArchivePage.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2161E4370B8004463C5 /* ArchivePage.c */; };
+		AE42F21E1E4370B8004463C5 /* HashIndex.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2191E4370B8004463C5 /* HashIndex.c */; };
+		AE42F21F1E4370B8004463C5 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F21B1E4370B8004463C5 /* main.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -27,14 +27,14 @@
 
 /* Begin PBXFileReference section */
 		AE42F1FD1E425985004463C5 /* ArchiveLib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ArchiveLib; sourceTree = BUILT_PRODUCTS_DIR; };
-		AE42F2071E4259DC004463C5 /* Archive.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Archive.c; sourceTree = SOURCE_ROOT; };
-		AE42F2081E4259DC004463C5 /* Archive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Archive.h; sourceTree = SOURCE_ROOT; };
-		AE42F2091E4259DC004463C5 /* ArchivePage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ArchivePage.c; sourceTree = SOURCE_ROOT; };
-		AE42F20A1E4259DC004463C5 /* ArchivePage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ArchivePage.h; sourceTree = SOURCE_ROOT; };
-		AE42F20B1E4259DC004463C5 /* HashIndex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = HashIndex.c; sourceTree = SOURCE_ROOT; };
-		AE42F20C1E4259DC004463C5 /* HashIndex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HashIndex.h; sourceTree = SOURCE_ROOT; };
-		AE42F2111E425A45004463C5 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = SOURCE_ROOT; };
-		AE42F2131E434261004463C5 /* Errors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Errors.h; sourceTree = SOURCE_ROOT; };
+		AE42F2141E4370B8004463C5 /* Archive.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Archive.c; path = archive/Archive.c; sourceTree = SOURCE_ROOT; };
+		AE42F2151E4370B8004463C5 /* Archive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Archive.h; path = archive/Archive.h; sourceTree = SOURCE_ROOT; };
+		AE42F2161E4370B8004463C5 /* ArchivePage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ArchivePage.c; path = archive/ArchivePage.c; sourceTree = SOURCE_ROOT; };
+		AE42F2171E4370B8004463C5 /* ArchivePage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ArchivePage.h; path = archive/ArchivePage.h; sourceTree = SOURCE_ROOT; };
+		AE42F2181E4370B8004463C5 /* Errors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Errors.h; path = archive/Errors.h; sourceTree = SOURCE_ROOT; };
+		AE42F2191E4370B8004463C5 /* HashIndex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = HashIndex.c; path = archive/HashIndex.c; sourceTree = SOURCE_ROOT; };
+		AE42F21A1E4370B8004463C5 /* HashIndex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HashIndex.h; path = archive/HashIndex.h; sourceTree = SOURCE_ROOT; };
+		AE42F21B1E4370B8004463C5 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = archive/main.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,7 +67,7 @@
 		AE42F1FF1E425985004463C5 /* ArchiveLib */ = {
 			isa = PBXGroup;
 			children = (
-				AE42F2111E425A45004463C5 /* main.c */,
+				AE42F21B1E4370B8004463C5 /* main.c */,
 				AE42F2101E4259E0004463C5 /* ArchiveLib */,
 			);
 			path = ArchiveLib;
@@ -76,13 +76,13 @@
 		AE42F2101E4259E0004463C5 /* ArchiveLib */ = {
 			isa = PBXGroup;
 			children = (
-				AE42F2071E4259DC004463C5 /* Archive.c */,
-				AE42F2081E4259DC004463C5 /* Archive.h */,
-				AE42F2091E4259DC004463C5 /* ArchivePage.c */,
-				AE42F20A1E4259DC004463C5 /* ArchivePage.h */,
-				AE42F20B1E4259DC004463C5 /* HashIndex.c */,
-				AE42F20C1E4259DC004463C5 /* HashIndex.h */,
-				AE42F2131E434261004463C5 /* Errors.h */,
+				AE42F2141E4370B8004463C5 /* Archive.c */,
+				AE42F2151E4370B8004463C5 /* Archive.h */,
+				AE42F2161E4370B8004463C5 /* ArchivePage.c */,
+				AE42F2171E4370B8004463C5 /* ArchivePage.h */,
+				AE42F2181E4370B8004463C5 /* Errors.h */,
+				AE42F2191E4370B8004463C5 /* HashIndex.c */,
+				AE42F21A1E4370B8004463C5 /* HashIndex.h */,
 			);
 			name = ArchiveLib;
 			sourceTree = "<group>";
@@ -144,10 +144,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AE42F2121E425A45004463C5 /* main.c in Sources */,
-				AE42F20F1E4259DC004463C5 /* HashIndex.c in Sources */,
-				AE42F20D1E4259DC004463C5 /* Archive.c in Sources */,
-				AE42F20E1E4259DC004463C5 /* ArchivePage.c in Sources */,
+				AE42F21F1E4370B8004463C5 /* main.c in Sources */,
+				AE42F21E1E4370B8004463C5 /* HashIndex.c in Sources */,
+				AE42F21C1E4370B8004463C5 /* Archive.c in Sources */,
+				AE42F21D1E4370B8004463C5 /* ArchivePage.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
