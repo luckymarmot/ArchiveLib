@@ -2,18 +2,39 @@
 // Created by Matthaus Woolard on 02/02/2017.
 //
 
-#include <stdarg.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include <setjmp.h>
-#include <cmocka.h>
-#include <stdbool.h>
+
+#include <ArchivePage.h>
 #include <Archive.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdlib.h>
+
+#include <cmocka.h>
+
+
+/// TEST ArchivePage.h
+static void test_ArchiveFileHeader(void **state) {
+    assert_int_equal(sizeof(ArchiveFileHeader), 34);
+}
+
+
+static void test_ArchivePage(void **state) {
+    assert_int_equal(sizeof(ArchivePage), 32);
+}
+
+
+static void test_ArchivePage_init(void **state) {
+    ArchivePage archive_page;
+    HashIndex index;
+    Errors error = ArchivePage_init(
+            &archive_page,
+            &index,
+            "missing-file-name",
+            false
+    );
+    assert_int_equal(error, 0);
+
+}
 
 
 /* A test_archive case that does nothing and succeeds. */
@@ -137,7 +158,10 @@ int main(void) {
             cmocka_unit_test(test_archive_new_file),
             cmocka_unit_test(test_ArchivePage_init_saves_head),
             cmocka_unit_test(test_ArchivePage_open_file_locks_file),
-            cmocka_unit_test(test_HashIndex_init)
+            cmocka_unit_test(test_HashIndex_init),
+            cmocka_unit_test(test_ArchiveFileHeader),
+            cmocka_unit_test(test_ArchivePage),
+            cmocka_unit_test(test_ArchivePage_init)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
