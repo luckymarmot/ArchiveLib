@@ -88,6 +88,7 @@ static void test_archive_file_close_on_free(void **state) {
     int response = lockf(archive.page_stack->page->fd, F_TEST, 0);
     assert_int_equal(response, -1);
     Archive_free(&archive);
+
     // There should be no lock on the file! yay
     response = lockf(archive.page_stack->page->fd, F_TEST, 0);
     assert_int_equal(response, 0);
