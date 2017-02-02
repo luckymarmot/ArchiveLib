@@ -36,10 +36,10 @@ typedef struct Archive
 } Archive;
 
 
-void        Archive_free(Archive*                 self);
-
 void        Archive_init(Archive*                 self,
                          char*                    base_file_path);
+
+void        Archive_free(Archive*                 self);
 
 bool        Archive_has(Archive*                  self,
                         char*                     key);
@@ -62,6 +62,16 @@ Errors      Archive_add_page_by_name(Archive*     self,
 void        Archive_add_page(Archive*             self,
                              ArchivePage*         page);
 
+/**
+ Saves all pages of the archive to the file system.
+
+ @param self The archive.
+ @param _filenames A pointer in which an array of filenames will be written.
+                   It's the caller responsibility to free() the char** array
+                   that was set to this pointer.
+ @param _n_files The number of archive files in the archive.
+ @return Error code.
+ */
 Errors      Archive_save(Archive*                 self,
                          char***                  _filenames,
                          size_t*                  _n_files);

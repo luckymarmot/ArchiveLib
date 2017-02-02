@@ -66,7 +66,7 @@ typedef struct HashPage
  */
 typedef struct HashIndex
 {
-    size_t                  items;
+    size_t                  n_items;
     HashPage*               pages[256];
 } HashIndex;
 

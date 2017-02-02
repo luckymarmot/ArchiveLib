@@ -27,6 +27,7 @@ int main() {
         filename = filenames[i] + 2;
         printf("file %s\n", filenames[i]);
     }
+    free(filenames);
     Archive_free(&archive);
 
     printf("Reading data\n");
