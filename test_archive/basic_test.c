@@ -7,13 +7,13 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <stdbool.h>
-#include "../archive/Archive.h"
+#include <Archive.h>
 
 /* A test_archive case that does nothing and succeeds. */
 static void null_test_success(void **state) {
     Archive archive;
-
-
+    Archive_init(&archive, "./");
+    Archive_free(&archive);
     (void) state; /* unused */
 }
 

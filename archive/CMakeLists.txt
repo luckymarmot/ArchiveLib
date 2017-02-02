@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.6)
-project(archive)
+
 
 set(CMAKE_C_STANDARD 11)
 
-set(SOURCE_FILES main.c HashIndex.c HashIndex.h ArchivePage.c ArchivePage.h Archive.c Archive.h)
-add_executable(ArchiveLib ${SOURCE_FILES})
+add_library (Archive Archive.h Archive.c ArchivePage.c ArchivePage.h HashIndex.c HashIndex.h Errors.h )
+
+add_executable(ArchiveLib main.c)
+target_link_libraries (ArchiveLib Archive)
+

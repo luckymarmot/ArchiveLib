@@ -1,7 +1,7 @@
 #ifndef ARCHIVELIB_HASHINDEX_H
 #define ARCHIVELIB_HASHINDEX_H
 
-#include "../Errors.h"
+#include "Errors.h"
 
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
