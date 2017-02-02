@@ -358,7 +358,7 @@ Errors      ArchivePage_init(ArchivePage*           self,
             return error;
         }
     }
-    
+        
     return E_SUCCESS;
 }
 
@@ -423,6 +423,6 @@ Errors      ArchivePage_set(ArchivePage*            self,
     if (error != E_SUCCESS) {
         return error;
     }
-    error = HashIndex_set(self->index, key, size, offset);
+    error = HashIndex_set(self->index, key, offset, size);
     return error;
 }

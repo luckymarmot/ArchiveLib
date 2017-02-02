@@ -62,7 +62,7 @@ Errors    HashIndex_pack(HashIndex*             self,
                 return E_INDEX_OUT_OF_BOUNDS;
             }
             for (j = 0; j < page->n_items; ++j) {
-                HashItem_pack(&page->items[j], &(items[n_items + j]));
+                HashItem_pack(page->items + j, items + n_items + j);
             }
             n_items += page->n_items;
         }

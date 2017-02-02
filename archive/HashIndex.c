@@ -20,12 +20,12 @@ unsigned short HASH_PAGE_INITIAL_CAPACITY = 10;
  */
 static inline void	HashItem_init_with_key(HashItem*        self,
                     	                   const char*      key,
-                        	               size_t           size,
-                            	           size_t           offset)
+                                           size_t           offset,
+                        	               size_t           size)
 {
     memcpy(self->key, key, 20);
-    self->data_size = size;
     self->data_offset = offset;
+    self->data_size = size;
 }
 
 
@@ -102,8 +102,8 @@ static inline bool      HashPage_has(HashPage*      	self,
  */
 static inline void        HashPage_set(HashPage*        self,
                                        const char*      key,
-                                       size_t           size,
-                                       size_t           offset)
+                                       size_t           offset,
+                                       size_t           size)
 {
     // if needed, increase the capacity
     if (self->n_items >= self->capacity) {
@@ -113,8 +113,7 @@ static inline void        HashPage_set(HashPage*        self,
     }
 
     // set the hash item
-    HashItem item = self->items[self->n_items];
-    HashItem_init_with_key(&item, key, offset, size);
+    HashItem_init_with_key(self->items + self->n_items, key, offset, size);
 
     // increase the number of items
     self->n_items += 1;
@@ -189,14 +188,14 @@ bool            HashIndex_has(HashIndex*                	self,
 
 Errors          HashIndex_set(HashIndex*                	self,
                               const char*                   key,
-                              size_t                        size,
-                              size_t                        offset)
+                              size_t                        offset,
+                              size_t                        size)
 {
     if (self->n_items >= MAX_ITEMS_PER_INDEX) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
     HashPage* page = HashIndex_get_or_create_page(self, key);
-    HashPage_set(page, key, size, offset);
+    HashPage_set(page, key, offset, size);
     self->n_items += 1;
     return E_SUCCESS;
 }

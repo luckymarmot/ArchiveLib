@@ -14,8 +14,8 @@ static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 typedef struct HashItem
 {
     char                    key[20];
-    size_t                  data_size;
     size_t                  data_offset;
+    size_t                  data_size;
 } HashItem;
 
 
@@ -103,8 +103,8 @@ const HashItem* HashIndex_get(HashIndex*                	self,
  */
 Errors          HashIndex_set(HashIndex*                	self,
                               const char*                   key,
-                              size_t                        size,
-                              size_t                        offset);
+                              size_t                        offset,
+                              size_t                        size);
 
 
 #endif //ARCHIVELIB_HASHINDEX_H
