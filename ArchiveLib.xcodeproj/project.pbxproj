@@ -34,6 +34,7 @@
 		AE42F20B1E4259DC004463C5 /* HashIndex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = HashIndex.c; sourceTree = SOURCE_ROOT; };
 		AE42F20C1E4259DC004463C5 /* HashIndex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HashIndex.h; sourceTree = SOURCE_ROOT; };
 		AE42F2111E425A45004463C5 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = SOURCE_ROOT; };
+		AE42F2131E434261004463C5 /* Errors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Errors.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +82,7 @@
 				AE42F20A1E4259DC004463C5 /* ArchivePage.h */,
 				AE42F20B1E4259DC004463C5 /* HashIndex.c */,
 				AE42F20C1E4259DC004463C5 /* HashIndex.h */,
+				AE42F2131E434261004463C5 /* Errors.h */,
 			);
 			name = ArchiveLib;
 			sourceTree = "<group>";

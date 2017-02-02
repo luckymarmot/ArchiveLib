@@ -58,7 +58,7 @@ Errors Archive_add_page_by_name(Archive* self, char* filename) {
     printf("file %s\n", full_path);
     ArchivePage* page = (ArchivePage*) malloc(sizeof(ArchivePage));
     HashIndex* index = (HashIndex*) malloc(sizeof(HashIndex));
-    Errors error = ArchivePage__init__(page, index, full_path, false);
+    Errors error = ArchivePage_init(page, index, full_path, false);
     if (error != E_SUCCESS) {
         free(page);
         free(index);
@@ -85,7 +85,7 @@ Errors Archive_new_page(Archive* self) {
     asprintf(&full_path, "%s%s", self->base_file_path, uuid_str);
     ArchivePage* page = (ArchivePage*) malloc(sizeof(ArchivePage));
     HashIndex* index = (HashIndex*) malloc(sizeof(HashIndex));
-    Errors error = ArchivePage__init__(page, index, full_path, true);
+    Errors error = ArchivePage_init(page, index, full_path, true);
     if (error != E_SUCCESS) {
         free(page);
         free(index);
