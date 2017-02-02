@@ -25,8 +25,8 @@ typedef struct HashItem
  */
 typedef struct HashPage
 {
-    u_int32_t               capacity;
-    u_int32_t               n_items;
+    size_t                  capacity;
+    size_t                  n_items;
     HashItem*               items;
 } HashPage;
 

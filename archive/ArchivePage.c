@@ -207,7 +207,8 @@ static inline Errors    ArchivePage_write_file_header(const ArchivePage* self)
         free(buf);
         return error;
     }
-
+    
+    free(buf);
     return E_SUCCESS;
 }
 

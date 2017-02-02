@@ -50,6 +50,7 @@ Errors      Archive_save(Archive*                 self,
         if (error != E_SUCCESS) {
             printf("Failed to save!!! %d\n", error);
             printf("File not saved ERROR: %s\n", strerror(errno));
+            free(filenames);
             return error;
         }
         filenames[i] = next->page->filename;

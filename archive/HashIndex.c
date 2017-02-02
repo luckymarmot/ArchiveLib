@@ -107,8 +107,11 @@ static inline void        HashPage_set(HashPage*        self,
 {
     // if needed, increase the capacity
     if (self->n_items >= self->capacity) {
-        unsigned short new_capacity = self->capacity * 2;
-        self->items = realloc(self->items, (sizeof(HashItem) * new_capacity));
+        size_t new_capacity = self->capacity * 2;
+        if (new_capacity <= HASH_PAGE_INITIAL_CAPACITY) {
+            new_capacity = HASH_PAGE_INITIAL_CAPACITY;
+        }
+        self->items = realloc(self->items, sizeof(HashItem) * new_capacity);
         self->capacity = new_capacity;
     }
 
