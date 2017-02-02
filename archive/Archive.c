@@ -8,9 +8,9 @@ void        Archive_init(Archive*                 self,
     self->page_stack = NULL;
     
     // copy base file path
-    size_t base_file_path_len = strlen(base_file_path);
-    self->base_file_path = malloc(base_file_path_len);
-    memcpy(self->base_file_path, base_file_path, base_file_path_len);
+    size_t base_file_path_size = strlen(base_file_path) + 1;
+    self->base_file_path = malloc(base_file_path_size);
+    memcpy(self->base_file_path, base_file_path, base_file_path_size);
 }
 
 void        Archive_free(Archive*                 self)

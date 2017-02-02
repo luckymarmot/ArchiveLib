@@ -18,7 +18,7 @@ void            HashItem_init_with_key(HashItem*        self,
                                        size_t           data_offset,
                                        size_t           data_size)
 {
-    memcpy(self->key, key, sizeof(char) * 20);
+    memcpy(self->key, key, 20);
     self->data_offset = data_offset;
     self->data_size = data_size;
 }

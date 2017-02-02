@@ -308,9 +308,9 @@ Errors      ArchivePage_init(ArchivePage*           self,
     Errors error;
 
     // copy filename to the struct
-    size_t filename_len = strlen(filename);
-    self->filename = (char*)malloc(sizeof(char) * filename_len);
-    memcpy(self->filename, filename, filename_len);
+    size_t filename_size = strlen(filename) + 1;
+    self->filename = (char*)malloc(filename_size);
+    memcpy(self->filename, filename, filename_size);
     printf("Init File:%s\n", self->filename);
 
     // open file descriptor

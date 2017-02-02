@@ -11,20 +11,20 @@
 #pragma mark HashItem Pack
 
 static inline void      HashItem_pack(HashItem*                 self,
-                                      PackedHashItem*           target)
+                                      PackedHashItem*           packed)
 {
-    memcpy(target->key, self->key, sizeof(char[20]));
-    target->data_offset = (__uint32_t) self->data_offset;
-    target->data_size = (__uint32_t) self->data_size;
+    memcpy(packed->key, self->key, 20);
+    packed->data_offset = (__uint32_t)self->data_offset;
+    packed->data_size = (__uint32_t)self->data_size;
 }
 
 
-static inline void      PackedHashItem_unpack(PackedHashItem*   self,
-                                              HashItem*         target)
+static inline void      HashItem_unpack(HashItem*               self,
+                                        PackedHashItem*         packed)
 {
-    memcpy(target->key, self->key, sizeof(char[20]));
-    target->data_offset = self->data_offset;
-    target->data_size =  self->data_size;
+    memcpy(self->key, packed->key, 20);
+    self->data_offset = packed->data_offset;
+    self->data_size =  packed->data_size;
 }
 
 
@@ -37,7 +37,7 @@ static inline void      HashPage_set_packed(HashPage*           self,
         self->allocated = (unsigned short) (self->allocated * 2);
     }
 
-    PackedHashItem_unpack(item, &(self->items[self->length]));
+    HashItem_unpack(&(self->items[self->length]), item);
     self->length += 1;
 }
 

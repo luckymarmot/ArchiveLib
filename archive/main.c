@@ -23,8 +23,8 @@ int main() {
     char** filenames;
     Archive_save(&archive, &filenames, &n_files);
     char filename[256];
-    memcpy(filename, filenames[n_files - 1] + 2, strlen(filenames[n_files - 1]) - 2);
-    printf("Archive file = %s\n", filename);
+    memcpy(filename, filenames[n_files - 1] + 2, strlen(filenames[n_files - 1]) - 1);
+    printf("Archive file = %s (len = %ld)\n", filename, strlen(filename));
     free(filenames);
     Archive_free(&archive);
 
