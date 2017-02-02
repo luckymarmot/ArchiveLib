@@ -49,11 +49,11 @@ static inline void  HashPage_init(HashPage*         self)
 /**
  Frees the hash page. This won't free the page structure itself.
 
- @param page The hash page to free.
+ @param self The hash page to free.
  */
-static inline void  HashPage_free(HashPage*         page)
+static inline void  HashPage_free(HashPage*         self)
 {
-    free(page->items);
+    free(self->items);
 }
 
 
