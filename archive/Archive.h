@@ -64,11 +64,34 @@ void        Archive_free(Archive*                 self);
 bool        Archive_has(Archive*                  self,
                         char*                     key);
 
+
+/**
+ Retrieve an item from the archive.
+
+ @param self The archive.
+ @param key The key to lookup (a 20 bytes binary string).
+ @param _data A pointer to the char* that will be returned.
+              The returned char* should be free'ed by the caller.
+              Data is not null-terminated, may be binary. The caller should
+              rely on the `_data_size` value to know how many bytes to read.
+ @param _data_size A pointer to the size of the read data.
+ @return An error code.
+ */
 Errors      Archive_get(Archive*                  self,
                         char*                     key,
                         char**                    _data,
                         size_t*                   _data_size);
 
+
+/**
+ Sets a new item to the archive.
+
+ @param self The archive.
+ @param key The key to set for the new item (a 20 bytes binary string).
+ @param data The data to write to the archive.
+ @param size The length of the data to write.
+ @return An error code.
+ */
 Errors      Archive_set(Archive*                  self,
                         char*                     key,
                         char*                     data,

@@ -1,10 +1,6 @@
-//
-// Created by Matthaus Woolard on 26/01/2017.
-//
-
 #include <stdio.h>
 #include <stdbool.h>
-#include "HashIndex.h"
+
 #include "Archive.h"
 
 
