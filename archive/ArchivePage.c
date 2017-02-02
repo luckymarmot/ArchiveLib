@@ -251,6 +251,11 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self,
         return E_SYSTEM_ERROR_ERRNO;
     }
     self->fd = fd;
+    // get a lock and dont wait for it
+    int lock = flock(self->fd, LOCK_SH | LOCK_NB);
+    if (lock < 0) {
+        return E_SYSTEM_ERROR_ERRNO;
+    }
     return E_SUCCESS;
 }
 
@@ -376,6 +381,7 @@ Errors      ArchivePage_save(ArchivePage*           self)
 void        ArchivePage_free(ArchivePage*           self)
 {
     HashIndex_free(self->index);
+    flock(self->fd, LOCK_UN);
     close(self->fd);
     free(self);
 }
