@@ -44,7 +44,9 @@ int main() {
     size_t data_size;
     error = Archive_get(&archive, key2, &data, &data_size);
     printf("Return Code = %d\n", error);
-    printf("Error = %s\n", strerror(errno));
+    char* str_err = strerror(errno);
+    printf("Error = %s\n", str_err);
+    free(str_err);
     printf("Length = %lu, Data = %.*s\n", data_size, (int)data_size, data);
     free(data);
     Archive_free(&archive);
