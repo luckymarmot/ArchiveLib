@@ -14,8 +14,8 @@ static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 typedef struct HashItem
 {
     char                    key[20];
-    size_t                  data_offset;
     size_t                  data_size;
+    size_t                  data_offset;
 } HashItem;
 
 
@@ -96,27 +96,15 @@ const HashItem* HashIndex_get(HashIndex*                	self,
  Sets an item in the index.
 
  @param self The index.
- @param item The item to insert.
+ @param key The key to insert (a 20 bytes binary string).
+ @param size Data size in the file.
+ @param offset Data offset in the file.
  @return An error code.
  */
 Errors          HashIndex_set(HashIndex*                	self,
-                              const HashItem*           	item);
-
-#pragma mark HashItem
-
-
-/**
- Initializes a HashItem for a given key.
-
- @param self The HashItem.
- @param key The key (20 bytes).
- @param data_offset Data offset of the item in the data.
- @param data_size Data size of the item in the data.
- */
-void            HashItem_init_with_key(HashItem*        	self,
-                                       char*            	key,
-                                       size_t           	data_offset,
-                                       size_t           	data_size);
+                              const char*                   key,
+                              size_t                        size,
+                              size_t                        offset);
 
 
 #endif //ARCHIVELIB_HASHINDEX_H

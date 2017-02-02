@@ -10,14 +10,22 @@ unsigned short HASH_PAGE_INITIAL_CAPACITY = 10;
 
 #pragma mark - HashItem
 
-void            HashItem_init_with_key(HashItem*        self,
-                                       char*            key,
-                                       size_t           data_offset,
-                                       size_t           data_size)
+/**
+ Initializes a HashItem for a given key.
+
+ @param self The HashItem.
+ @param key The key (20 bytes).
+ @param size Data size of the item in the data.
+ @param offset Data offset of the item in the data.
+ */
+static inline void	HashItem_init_with_key(HashItem*        self,
+                    	                   const char*      key,
+                        	               size_t           size,
+                            	           size_t           offset)
 {
     memcpy(self->key, key, 20);
-    self->data_offset = data_offset;
-    self->data_size = data_size;
+    self->data_size = size;
+    self->data_offset = offset;
 }
 
 
@@ -88,10 +96,14 @@ static inline bool      HashPage_has(HashPage*      	self,
  Adds a HashItem to the page.
 
  @param self The hash page.
- @param item The hash item too add.
+ @param key The key to insert (a 20 bytes binary string).
+ @param size Data size in the file.
+ @param offset Data offset in the file.
  */
 static inline void        HashPage_set(HashPage*        self,
-                                       const HashItem*  item)
+                                       const char*      key,
+                                       size_t           size,
+                                       size_t           offset)
 {
     // if needed, increase the capacity
     if (self->n_items >= self->capacity) {
@@ -100,8 +112,9 @@ static inline void        HashPage_set(HashPage*        self,
         self->capacity = new_capacity;
     }
 
-    // copy the hash item there
-    memcpy(&(self->items[self->n_items]), item, sizeof(HashItem));
+    // set the hash item
+    HashItem item = self->items[self->n_items];
+    HashItem_init_with_key(&item, key, offset, size);
 
     // increase the number of items
     self->n_items += 1;
@@ -175,13 +188,15 @@ bool            HashIndex_has(HashIndex*                	self,
 
 
 Errors          HashIndex_set(HashIndex*                	self,
-                              const HashItem*           	item)
+                              const char*                   key,
+                              size_t                        size,
+                              size_t                        offset)
 {
     if (self->n_items >= MAX_ITEMS_PER_INDEX) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
-    HashPage* page = HashIndex_get_or_create_page(self, item->key);
-    HashPage_set(page, item);
+    HashPage* page = HashIndex_get_or_create_page(self, key);
+    HashPage_set(page, key, size, offset);
     self->n_items += 1;
     return E_SUCCESS;
 }

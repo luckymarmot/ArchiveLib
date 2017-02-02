@@ -42,7 +42,7 @@ typedef struct ArchivePage
  @return An error code.
  */
 Errors      ArchivePage_init(ArchivePage*           self,
-                             char*                  filename,
+                             const char*            filename,
                              bool                   new_file);
 
 
@@ -60,7 +60,7 @@ void        ArchivePage_free(ArchivePage*           self);
  @param self The archive page.
  @return An error code.
  */
-Errors      ArchivePage_save(ArchivePage*           self);
+Errors      ArchivePage_save(const ArchivePage*   	self);
 
 
 /**
@@ -70,8 +70,8 @@ Errors      ArchivePage_save(ArchivePage*           self);
  @param key The key to lookup (a 20 bytes binary string).
  @return An error code.
  */
-bool        ArchivePage_has(ArchivePage*            page,
-                            char*                   key);
+bool        ArchivePage_has(const ArchivePage*      page,
+                            const char*             key);
 
 
 /**
@@ -86,8 +86,8 @@ bool        ArchivePage_has(ArchivePage*            page,
  @param _data_size A pointer to the size of the read data.
  @return An error code.
  */
-Errors      ArchivePage_get(ArchivePage*            self,
-                            char*                   key,
+Errors      ArchivePage_get(const ArchivePage*      self,
+                            const char*             key,
                             char**                  _data,
                             size_t*                 _data_size);
 
@@ -102,8 +102,8 @@ Errors      ArchivePage_get(ArchivePage*            self,
  @return An error code.
  */
 Errors      ArchivePage_set(ArchivePage*            self,
-                            char*                   key,
-                            char*                   data,
+                            const char*             key,
+                            const char*             data,
                             size_t                  size);
 
 

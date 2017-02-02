@@ -160,7 +160,7 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
 #pragma mark ArchivePage Header Serialization
 
 
-static inline void      ArchivePage_dump_file_header(ArchivePage*       self,
+static inline void      ArchivePage_dump_file_header(const ArchivePage* self,
                                                      void*              buf)
 {
     ArchiveFileHeader file_header;
@@ -180,7 +180,7 @@ static inline void      ArchivePage_dump_file_header(ArchivePage*       self,
  @param self The archive.
  @return An error code.
  */
-static inline Errors    ArchivePage_write_file_header(ArchivePage*       self)
+static inline Errors    ArchivePage_write_file_header(const ArchivePage* self)
 {
     Errors error;
     
@@ -247,7 +247,7 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self)
 
  @param self The archive.
  */
-static inline void      ArchivePage_close_file(ArchivePage*      self)
+static inline void      ArchivePage_close_file(ArchivePage*      	self)
 {
     flock(self->fd, LOCK_UN);
     close(self->fd);
@@ -255,10 +255,10 @@ static inline void      ArchivePage_close_file(ArchivePage*      self)
 }
 
 
-static Errors           ArchivePage_read_item(ArchivePage*  self,
-                                              HashItem*     item,
-                                              char**        _data,
-                                              size_t*       _data_size)
+static Errors           ArchivePage_read_item(const ArchivePage*	self,
+                                              const HashItem*     	item,
+                                              char**        		_data,
+                                              size_t*       		_data_size)
 {
     size_t data_size = item->data_size;
     char* data = (char*)malloc(sizeof(char) * data_size);
@@ -285,22 +285,21 @@ static Errors           ArchivePage_read_item(ArchivePage*  self,
 }
 
 
-static Errors       ArchivePage_write_item(ArchivePage* self,
-                                           HashItem*    item,
-                                           char*        data,
-                                           size_t       size)
+static Errors       ArchivePage_write_item(ArchivePage*     self,
+                                           const char*      data,
+                                           size_t           size,
+                                           size_t*          _data_offset)
 {
 
     // the item is positioned at the end of the files data section
-    item->data_offset = self->data_size;
-    item->data_size = size;
+    size_t offset = self->data_size;
 
     // write to file
     Errors error = write_to_file(
         self->fd,
         data,
         size,
-        (off_t)(ArchivePage_data_start + item->data_offset)
+        (off_t)(ArchivePage_data_start + offset)
     );
 
     if (error != E_SUCCESS) {
@@ -309,6 +308,9 @@ static Errors       ArchivePage_write_item(ArchivePage* self,
 
     // update the data size
     self->data_size += size;
+    
+    // set return pointer
+    *_data_offset = offset;
 
     return E_SUCCESS;
 }
@@ -318,7 +320,7 @@ static Errors       ArchivePage_write_item(ArchivePage* self,
 
 
 Errors      ArchivePage_init(ArchivePage*           self,
-                             char*                  filename,
+                             const char*            filename,
                              bool                   new_file)
 {
     Errors error;
@@ -372,7 +374,7 @@ void        ArchivePage_free(ArchivePage*           self)
 }
 
 
-Errors      ArchivePage_save(ArchivePage*           self)
+Errors      ArchivePage_save(const ArchivePage*   	self)
 {
     Errors error;
     
@@ -386,19 +388,19 @@ Errors      ArchivePage_save(ArchivePage*           self)
 }
 
 
-bool        ArchivePage_has(ArchivePage*            page,
-                            char*                   key)
+bool        ArchivePage_has(const ArchivePage*      page,
+                            const char*             key)
 {
     return HashIndex_has(page->index, key);
 }
 
 
-Errors      ArchivePage_get(ArchivePage*            self,
-                            char*                   key,
+Errors      ArchivePage_get(const ArchivePage*      self,
+                            const char*             key,
                             char**                  _data,
                             size_t*                 _data_size)
 {
-    HashItem* item = HashIndex_get(self->index, key);
+    const HashItem* item = HashIndex_get(self->index, key);
     if (item == NULL) {
         return E_SUCCESS;
     }
@@ -407,8 +409,8 @@ Errors      ArchivePage_get(ArchivePage*            self,
 
 
 Errors      ArchivePage_set(ArchivePage*            self,
-                            char*                   key,
-                            char*                   data,
+                            const char*             key,
+                            const char*             data,
                             size_t                  size)
 {
     // if the page is full, return an error
@@ -416,12 +418,11 @@ Errors      ArchivePage_set(ArchivePage*            self,
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
     
-    HashItem item;
-    HashItem_init_with_key(&item, key, 0, size);
-    Errors error = ArchivePage_write_item(self, &item, data, size);
+    size_t offset;
+    Errors error = ArchivePage_write_item(self, data, size, &offset);
     if (error != E_SUCCESS) {
         return error;
     }
-    error = HashIndex_set(self->index, &item);
+    error = HashIndex_set(self->index, key, size, offset);
     return error;
 }
