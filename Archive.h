@@ -24,12 +24,6 @@ typedef struct ArchiveListItem
 } ArchiveListItem;
 
 
-typedef struct ArchiveFiles
-{
-    size_t                      n_files;
-    char**                      page_filenames;
-} ArchiveFiles;
-
 /**
  * Archive object latest pages on the end of the list
  *
@@ -69,6 +63,7 @@ void        Archive_add_page(Archive*             self,
                              ArchivePage*         page);
 
 Errors      Archive_save(Archive*                 self,
-                         ArchiveFiles*            files);
+                         char***                  _filenames,
+                         size_t*                  _n_files);
 
 #endif //ARCHIVELIB_ARCHIVE_H

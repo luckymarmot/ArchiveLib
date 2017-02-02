@@ -19,12 +19,13 @@ int main() {
     Archive_new_page(&archive);
     Archive_set(&archive, key, "the data", 8);
     Archive_set(&archive, key2, "the other data", 14);
-    ArchiveFiles archive_files;
-    Archive_save(&archive, &archive_files);
+    size_t n_files;
+    char** filenames;
+    Archive_save(&archive, &filenames, &n_files);
     char* filename = NULL;
-    for (int i = 0; i < archive_files.n_files; ++i) {
-        filename = archive_files.page_filenames[i] + 2;
-        printf("file %s\n", archive_files.page_filenames[i]);
+    for (int i = 0; i < n_files; ++i) {
+        filename = filenames[i] + 2;
+        printf("file %s\n", filenames[i]);
     }
     Archive_free(&archive);
 

@@ -23,10 +23,15 @@ void Archive_free(Archive* self) {
     }
 }
 
-Errors Archive_save(Archive* self, ArchiveFiles* files) {
+Errors      Archive_save(Archive*                 self,
+                         char***                  _filenames,
+                         size_t*                  _n_files)
+{
     Errors error;
-    files->n_files = self->n_pages;
-    files->page_filenames = (char **) (malloc(sizeof(char*) * self->n_pages));
+
+    char** filenames = (char **)malloc(sizeof(char*) * self->n_pages);
+    size_t n_files = self->n_pages;
+
     ArchiveListItem* next = self->page_stack;
     int i = 0;
     while (next != NULL) {
@@ -37,10 +42,15 @@ Errors Archive_save(Archive* self, ArchiveFiles* files) {
             printf("File not saved ERROR: %s\n", strerror(errno));
             return error;
         }
-        files->page_filenames[i] = next->page->filename;
+        filenames[i] = next->page->filename;
         i += 1;
         next = next->next;
     }
+    
+    // set return pointers
+    *_filenames = filenames;
+    *_n_files = n_files;
+    
     return E_SUCCESS;
 }
 
