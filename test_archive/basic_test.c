@@ -71,6 +71,12 @@ static void test_archive_new_file_created_on_init(void **state) {
     FILE* f = fopen(archive.page_stack->page->filename, "r+");
     char* data = (char*) malloc(sizeof(char)*10);
     size_t result = fread(data, 1, 10, f);
+
+    unsigned short version = 0;
+    size_t header_start = sizeof(ArchiveFileHeader);
+    assert_memory_equal(data, &version, sizeof(unsigned short));
+    assert_memory_equal(data + sizeof(unsigned short), &header_start, sizeof(size_t));
+
     assert_int_equal(result, 10);
 
     fclose(f);
