@@ -403,7 +403,7 @@ Errors      ArchivePage_get(const ArchivePage*      self,
 {
     const HashItem* item = HashIndex_get(self->index, key);
     if (item == NULL) {
-        return E_SUCCESS;
+        return E_NOT_FOUND;
     }
     return ArchivePage_read_item(self, item, _data, _data_size);
 }

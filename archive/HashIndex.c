@@ -69,7 +69,7 @@ static inline const HashItem* HashPage_get(HashPage*    self,
 {
     HashItem *item;
     for (int i = 0; i < self->n_items; ++i) {
-        item = &self->items[i];
+        item = self->items + i;
         if (memcmp(item->key, key, 20) == 0) {
             return item;
         }
@@ -136,7 +136,7 @@ static inline void        HashPage_set(HashPage*        self,
 static inline HashPage*     HashIndex_get_page(HashIndex*       self,
                                                const char*      key)
 {
-    char lookup_chr = key[0];
+    unsigned char lookup_chr = key[0];
     return self->pages[lookup_chr];
 }
 
@@ -167,7 +167,7 @@ void            HashIndex_free(HashIndex*               self)
 HashPage*       HashIndex_get_or_create_page(HashIndex*     self,
                                              const char*    key)
 {
-    char lookup_chr = key[0];
+    unsigned char lookup_chr = key[0];
     HashPage* page = self->pages[lookup_chr];
     if (page == NULL) {
         page = (HashPage*)malloc(sizeof(HashPage));

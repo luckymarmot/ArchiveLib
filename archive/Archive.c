@@ -142,11 +142,10 @@ Errors      Archive_get(const Archive*            self,
     Errors error;
     ArchiveListItem* item = self->page_stack;
     while (item != NULL) {
+        // lookup in an archive
         error = ArchivePage_get(item->page, key, _data, _data_size);
-        if (error == E_SUCCESS) {
-            return E_SUCCESS;
-        }
-        if (error < 0) {
+        // if success or an error that isn't "not found" stop
+        if (error != E_NOT_FOUND) {
             return error;
         }
         item = item->next;
