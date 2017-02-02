@@ -59,7 +59,7 @@ static void test_archive_new_file(void **state) {
 }
 
 
-static void test_archive_new_file_created_on_init(void **state) {
+static void test_ArchivePage_init_saves_head(void **state) {
     Archive archive;
     Archive_init(&archive, "./");
     Archive_new_page(&archive);
@@ -85,7 +85,7 @@ static void test_archive_new_file_created_on_init(void **state) {
 }
 
 
-static void test_archive_file_close_on_free(void **state) {
+static void test_ArchivePage_open_file_locks_file(void **state) {
     Archive archive;
     Archive_init(&archive, "./");
     Archive_new_page(&archive);
@@ -101,12 +101,43 @@ static void test_archive_file_close_on_free(void **state) {
 }
 
 
+
+/**
+ *
+ * Test init preps index
+ */
+static void test_HashIndex_init(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    Archive_new_page(&archive);
+    HashIndex* index = archive.page_stack->page->index;
+    assert_non_null(index);
+    assert_int_equal(index->n_items, 0);
+    for (int i = 0; i < 256; ++i) {
+        assert_null(index->pages[i]);
+    }
+    Archive_free(&archive);
+
+    HashIndex indexL;
+    HashIndex_init(&indexL);
+    assert_int_equal(indexL.n_items, 0);
+    for (int i = 0; i < 256; ++i) {
+        assert_null(indexL.pages[i]);
+    }
+
+}
+
+
+
+
+
 int main(void) {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_archive_init),
             cmocka_unit_test(test_archive_new_file),
-            cmocka_unit_test(test_archive_new_file_created_on_init),
-            cmocka_unit_test(test_archive_file_close_on_free)
+            cmocka_unit_test(test_ArchivePage_init_saves_head),
+            cmocka_unit_test(test_ArchivePage_open_file_locks_file),
+            cmocka_unit_test(test_HashIndex_init)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
