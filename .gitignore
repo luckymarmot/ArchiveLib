@@ -126,3 +126,29 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Mac OS X
+.DS_Store
+
+# Xcode
+*.xcworkspace
+xcuserdata/
+project.xcworkspace/
+
+# Cocoapods
+Pods/
+
+# Generated files
+*.pyc
+
+# Build Files
+Build/
+DerivedData/
+
+# Other CVS
+.svn
+
+# Custom
+.buildconfig.json
+
+# AppCode
+.idea
