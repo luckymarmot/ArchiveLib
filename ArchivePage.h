@@ -53,7 +53,8 @@ bool        ArchivePage_has(ArchivePage*            page,
 
 Errors      ArchivePage_get(ArchivePage*            self,
                             char*                   key,
-                            char**                  data);
+                            char**                  _data,
+                            size_t*                 _data_size);
 
 Errors      ArchivePage_set(ArchivePage*            self,
                             char*                   key,

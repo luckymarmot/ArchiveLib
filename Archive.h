@@ -51,7 +51,9 @@ bool        Archive_has(Archive*                  self,
                         char*                     key);
 
 Errors      Archive_get(Archive*                  self,
-                        char*                     key, char** data);
+                        char*                     key,
+                        char**                    _data,
+                        size_t*                   _data_size);
 
 Errors      Archive_set(Archive*                  self,
                         char*                     key,

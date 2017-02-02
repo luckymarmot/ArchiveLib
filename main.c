@@ -20,7 +20,7 @@ int main() {
     Archive_set(&archive, key2, "the other data", 14);
     ArchiveFiles* files = (ArchiveFiles*) (malloc(sizeof(ArchiveFiles)));
     Archive_save(&archive, files);
-    char* filename;
+    char* filename = NULL;
     for (int i = 0; i < files->n_files; ++i) {
         filename = files->page_filenames[i] + 2;
         printf("file %s\n", files->page_filenames[i]);
@@ -33,11 +33,13 @@ int main() {
     Archive_add_page_by_name(&archive, filename);
     printf("Added page %s\n", filename);
     bool found = Archive_has(&archive, key);
-    printf("Found?%d\n", found);
-    char* data = (char*) (malloc(sizeof(char)));
-    Errors error = Archive_get(&archive, key2, &data);
-    printf("ERROR: %s\n", strerror(errno));
-    printf("data? %s\n", &data);
+    printf("Found = %d\n", found);
+    char* data;
+    size_t data_size;
+    Errors error = Archive_get(&archive, key2, &data, &data_size);
+    printf("Return Code = %d\n", error);
+    printf("Error = %s\n", strerror(errno));
+    printf("Length = %lu, Data = %s\n", data_size, data);
     Archive_free(&archive);
 
     return 0;

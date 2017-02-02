@@ -109,20 +109,24 @@ bool Archive_has(Archive* self, char* key) {
     return false;
 }
 
-Errors Archive_get(Archive* self, char* key, char** data) {
+Errors      Archive_get(Archive*                  self,
+                        char*                     key,
+                        char**                    _data,
+                        size_t*                   _data_size)
+{
     Errors error;
     ArchiveListItem* next = self->page_stack;
     while (next != NULL) {
-        error = ArchivePage_get(next->page, key, data);
-        if (error == E_FOUND) {
-            return E_FOUND;
+        error = ArchivePage_get(next->page, key, _data, _data_size);
+        if (error == E_SUCCESS) {
+            return E_SUCCESS;
         }
         if (error < 0) {
             return error;
         }
         next = next->next;
     }
-    return E_SUCCESS;
+    return E_NOT_FOUND;
 }
 
 Errors Archive_set(Archive* self, char* key, char* data, size_t size) {

@@ -40,7 +40,7 @@ Errors read_from_file(
     off_t read = 0;
     ssize_t r;
     while (read < size) {
-        r = pread(fd, ((char*) buffer) + read, size - read, offset + read);
+        r = pread(fd, (char*)buffer + read, size - read, offset + read);
         if (r < 0) {
             return E_SYSTEM_ERROR_ERRNO;
         }
@@ -129,7 +129,6 @@ Errors HashIndex_pack(HashIndex* self, PackedIndex* packed_index) {
  *
  * @param self
  * @param index
- * @return
  */
 void PackedIndex_unpack(PackedIndex* self, HashIndex* index) {
     // Packed indexes are saved in a sequence so a while loop
@@ -344,21 +343,33 @@ bool ArchivePage_has(ArchivePage* page, char* key) {
     return HashIndex_has(page->index, key);
 }
 
-Errors ArchivePage_read(ArchivePage* self, HashItem* item, char** data) {
-    *data = (char*) (malloc((sizeof(char)*item->data_size)));
+static Errors       ArchivePage_read(ArchivePage*       self,
+                                     HashItem*          item,
+                                     char**             _data,
+                                     size_t*            _data_size) {
+    size_t data_size = item->data_size;
+    char* data = (char*)malloc(sizeof(char) * data_size);
+
+    // read from file
     Errors error = read_from_file(
-            self->data_file,
-            data,
-            item->data_size,
-            (off_t) (self->file_header->data_start + item->data_offset)
+        self->data_file,
+        data,
+        data_size,
+        (off_t)(self->file_header->data_start + item->data_offset)
     );
+
+    // if error, free data and return
     if (error != E_SUCCESS) {
-        free(*data);
+        free(data);
         return error;
     }
-    return E_FOUND;
-}
 
+    // assign return pointers
+    *_data_size = data_size;
+    *_data = data;
+
+    return E_SUCCESS;
+}
 
 Errors ArchivePage_write(
         ArchivePage* self,
@@ -387,12 +398,15 @@ Errors ArchivePage_write(
     return E_SUCCESS;
 }
 
-Errors ArchivePage_get(ArchivePage* self, char* key, char** data) {
+Errors      ArchivePage_get(ArchivePage*            self,
+                            char*                   key,
+                            char**                  _data,
+                            size_t*                 _data_size) {
     HashItem* item = HashIndex_get(self->index, key);
     if (item == NULL) {
         return E_SUCCESS;
     }
-    return ArchivePage_read(self, item, data);
+    return ArchivePage_read(self, item, _data, _data_size);
 }
 
 Errors ArchivePage_set(ArchivePage* self, char* key, char* data, size_t size) {
