@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#import "HashIndex.h"
+#include "HashIndex.h"
 #include "Errors.h"
 
 

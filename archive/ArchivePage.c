@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "Endian.h"
 #include "ArchivePage.h"
 #include "HashIndexPack.h"
 
@@ -90,11 +91,11 @@ static inline Errors    ArchivePage_read_file_index(ArchivePage*        self,
     size_t p_items_size = sizeof(PackedHashItem) * n_items;
     PackedHashItem* p_items = (PackedHashItem*)malloc(p_items_size);
     Errors error = read_from_file(
-		self->fd,
-		p_items,
-		p_items_size,
-		ArchivePage_index_start
-	);
+        self->fd,
+        p_items,
+        p_items_size,
+        ArchivePage_index_start
+    );
     if (error != E_SUCCESS) {
         free(p_items);
         return error;
@@ -127,21 +128,30 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     }
     
     // check data consistency
-    if (file_header.version != ArchiveFileVersion1) {
+    if (be32toh(file_header.version) != ArchiveFileVersion1) {
         return E_UNKNOWN_ARCHIVE_VERSION;
     }
-    if (file_header.index_start != ArchivePage_index_start ||
-        file_header.data_start != ArchivePage_data_start ||
-        file_header.capacity != ArchivePage_capacity ||
-        file_header.n_items > file_header.capacity) {
+
+    // enforce the right endianness
+    size_t capacity     = be32toh(file_header.capacity);
+    size_t n_items      = be32toh(file_header.n_items);
+    size_t index_start  = be32toh(file_header.index_start);
+    size_t data_start   = be32toh(file_header.data_start);
+    size_t data_size    = be32toh(file_header.data_size);
+
+    // check data consistency
+    if (index_start != ArchivePage_index_start ||
+        data_start != ArchivePage_data_start ||
+        capacity != ArchivePage_capacity ||
+        n_items > capacity) {
         return E_INVALID_ARCHIVE_HEADER;
     }
     
     // populate the ArchivePage fields
-    self->data_size = file_header.data_size;
+    self->data_size = data_size;
     
     // read index
-    error = ArchivePage_read_file_index(self, file_header.n_items);
+    error = ArchivePage_read_file_index(self, n_items);
 
     return error;
 }
@@ -150,23 +160,16 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
 #pragma mark ArchivePage Header Serialization
 
 
-static inline void      ArchivePage_init_file_header(ArchivePage*       self,
-                                                     ArchiveFileHeader* header)
-{
-    header->version = ArchiveFileVersion1;
-    header->capacity = (__uint32_t)ArchivePage_capacity;
-    header->n_items = (__uint32_t)self->index->n_items;
-    header->index_start = (__uint32_t)ArchivePage_index_start;
-    header->data_start = (__uint32_t)ArchivePage_data_start;
-    header->data_size = (__uint32_t)self->data_size;
-}
-
-
 static inline void      ArchivePage_dump_file_header(ArchivePage*       self,
                                                      void*              buf)
 {
     ArchiveFileHeader file_header;
-    ArchivePage_init_file_header(self, &file_header);
+    file_header.version     = htobe32(ArchiveFileVersion1);
+    file_header.capacity    = htobe32((__uint32_t)ArchivePage_capacity);
+    file_header.n_items     = htobe32((__uint32_t)self->index->n_items);
+    file_header.index_start = htobe32((__uint32_t)ArchivePage_index_start);
+    file_header.data_start  = htobe32((__uint32_t)ArchivePage_data_start);
+    file_header.data_size   = htobe32((__uint32_t)self->data_size);
     memcpy(buf, &file_header, sizeof(ArchiveFileHeader));
 }
 

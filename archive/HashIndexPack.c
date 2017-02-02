@@ -7,6 +7,7 @@
 //
 
 #include "HashIndexPack.h"
+#include "Endian.h"
 
 #pragma mark HashItem Pack
 
@@ -14,8 +15,8 @@ static inline void      HashItem_pack(HashItem*                 self,
                                       PackedHashItem*           packed)
 {
     memcpy(packed->key, self->key, 20);
-    packed->data_offset = (__uint32_t)self->data_offset;
-    packed->data_size = (__uint32_t)self->data_size;
+    packed->data_offset = htobe32((__uint32_t)self->data_offset);
+    packed->data_size   = htobe32((__uint32_t)self->data_size);
 }
 
 
@@ -23,8 +24,8 @@ static inline void      HashItem_unpack(HashItem*               self,
                                         PackedHashItem*         packed)
 {
     memcpy(self->key, packed->key, 20);
-    self->data_offset = packed->data_offset;
-    self->data_size =  packed->data_size;
+    self->data_offset   = be32toh(packed->data_offset);
+    self->data_size     = be32toh(packed->data_size);
 }
 
 

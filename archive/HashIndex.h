@@ -3,12 +3,6 @@
 
 #include "Errors.h"
 
-
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#error "Compile with Little Endian"
-#endif
-
-
 #define _MAX_ITEMS_PER_INDEX 2000
 static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 
