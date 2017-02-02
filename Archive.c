@@ -96,18 +96,19 @@ Errors Archive_new_page(Archive* self) {
 }
 
 
-bool Archive_has(Archive* self, char* key) {
-    bool found;
+bool        Archive_has(Archive*                  self,
+                        char*                     key)
+{
     ArchiveListItem* next = self->page_stack;
     while (next != NULL) {
-        found = ArchivePage_has(next->page, key);
-        if (found) {
+        if (ArchivePage_has(next->page, key)) {
             return true;
         }
         next = next->next;
     }
     return false;
 }
+
 
 Errors      Archive_get(Archive*                  self,
                         char*                     key,

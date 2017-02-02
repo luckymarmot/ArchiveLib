@@ -1,7 +1,3 @@
-//
-// Created by Matthaus Woolard on 27/01/2017.
-//
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -306,10 +302,11 @@ Errors      ArchivePage_init(ArchivePage*           self,
 }
 
 
-Errors ArchivePage_save_to_disk(ArchivePage* self) {
-    Errors error = ArchivePage_write_file_header(
-            self, self->file_header
-    );
+Errors      ArchivePage_save_to_disk(ArchivePage*   self)
+{
+    Errors error;
+    
+    error = ArchivePage_write_file_header(self, self->file_header);
     if (error != E_SUCCESS) {
         printf("ArchivePage_write_file_header %d\n", error);
         return error;
@@ -344,10 +341,10 @@ bool        ArchivePage_has(ArchivePage*            page,
 }
 
 
-static Errors       ArchivePage_read(ArchivePage*       self,
-                                     HashItem*          item,
-                                     char**             _data,
-                                     size_t*            _data_size) {
+static Errors       ArchivePage_read_item(ArchivePage*  self,
+                                          HashItem*     item,
+                                          char**        _data,
+                                          size_t*       _data_size) {
     size_t data_size = item->data_size;
     char* data = (char*)malloc(sizeof(char) * data_size);
 
@@ -373,10 +370,10 @@ static Errors       ArchivePage_read(ArchivePage*       self,
 }
 
 
-static Errors       ArchivePage_write(ArchivePage*      self,
-                                      HashItem*         item,
-                                      char*             data,
-                                      size_t            size) {
+static Errors       ArchivePage_write_item(ArchivePage* self,
+                                           HashItem*    item,
+                                           char*        data,
+                                           size_t       size) {
 
     // the item is positioned at the end of the files data section
     item->data_offset = self->file_header->data_size;
@@ -409,7 +406,7 @@ Errors      ArchivePage_get(ArchivePage*            self,
     if (item == NULL) {
         return E_SUCCESS;
     }
-    return ArchivePage_read(self, item, _data, _data_size);
+    return ArchivePage_read_item(self, item, _data, _data_size);
 }
 
 
@@ -425,7 +422,7 @@ Errors      ArchivePage_set(ArchivePage*            self,
     
     HashItem item;
     HashItem_init_with_key(&item, key, 0, size);
-    Errors error = ArchivePage_write(self, &item, data, size);
+    Errors error = ArchivePage_write_item(self, &item, data, size);
     if (error != E_SUCCESS) {
         return error;
     }

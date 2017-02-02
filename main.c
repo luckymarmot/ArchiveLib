@@ -40,7 +40,8 @@ int main() {
     Errors error = Archive_get(&archive, key2, &data, &data_size);
     printf("Return Code = %d\n", error);
     printf("Error = %s\n", strerror(errno));
-    printf("Length = %lu, Data = %s\n", data_size, data);
+    printf("Length = %lu, Data = %.*s\n", data_size, (int)data_size, data);
+    free(data);
     Archive_free(&archive);
 
     return 0;
