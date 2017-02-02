@@ -26,14 +26,6 @@ typedef struct HashItem
 } HashItem;
 
 
-typedef struct __attribute__((__packed__)) PackedHashItem
-{
-    char                    key[20];
-    __uint32_t              data_offset;
-    __uint32_t              data_size;
-} PackedHashItem;
-
-
 /**
  * Data Blob
  *
@@ -100,10 +92,6 @@ Errors          HashIndex_set(HashIndex*                self,
 
 void            HashPage_set(HashPage*                  self,
                              HashItem*                  item);
-
-void            HashPage_set_packed(HashPage*           self,
-                                    PackedHashItem*     item);
-
 
 #pragma mark HashItem
 

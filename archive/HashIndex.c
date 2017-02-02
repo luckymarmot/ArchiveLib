@@ -1,7 +1,3 @@
-//
-// Created by Matthaus Woolard on 27/01/2017.
-//
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -166,25 +162,6 @@ void HashPage_set(HashPage* self, HashItem* item) {
 }
 
 
-static inline void PackedHashItem_unpack(PackedHashItem* self, HashItem* target) {
-    memcpy(target->key, self->key, sizeof(char[20]));
-    target->data_offset = self->data_offset;
-    target->data_size =  self->data_size;
-}
-
-
-void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
-    if (self->length + 1 >= self->allocated) {
-        // We need to expand the object
-        self->items = realloc(self->items, (sizeof(HashItem) * self->allocated * 2));
-        self->allocated = (unsigned short) (self->allocated * 2);
-    }
-
-    PackedHashItem_unpack(item, &(self->items[self->length]));
-    self->length += 1;
-}
-
-
 void            HashIndex_init(HashIndex*               self)
 {
     self->n_items = 0;
@@ -216,12 +193,11 @@ HashPage* HashIndex_get_page(HashIndex* self, char key[20]) {
  */
 HashPage* HashIndex_get_or_create_page(HashIndex* self, char key[20]) {
     HashPage* page = self->pages[key[0]];
-    if (page) {
-        return page;
+    if (page == NULL) {
+        page = (HashPage*) (malloc(sizeof(HashPage)));
+        HashPage_init(page, HASH_PAGE_ALLOCATION);
+        self->pages[key[0]] = page;
     }
-    page = (HashPage*) (malloc(sizeof(HashPage)));
-    HashPage_init(page, HASH_PAGE_ALLOCATION);
-    self->pages[key[0]] = page;
     return page;
 }
 
@@ -236,10 +212,10 @@ HashPage* HashIndex_get_or_create_page(HashIndex* self, char key[20]) {
  */
 HashItem* HashIndex_get_index_item(HashIndex* self, char key[20]) {
     HashPage* page = HashIndex_get_page(self, key);
-    if (page) {
-        return HashPage_get(page, key);
+    if (page == NULL) {
+        return NULL;
     }
-    return NULL;
+    return HashPage_get(page, key);
 }
 
 
@@ -255,10 +231,10 @@ HashItem* HashIndex_get_index_item(HashIndex* self, char key[20]) {
  */
 bool HashIndex_has(HashIndex* self, char* key) {
     HashPage* page = HashIndex_get_page(self, key);
-    if (page) {
-        return HashPage_has(page, key);
+    if (page == NULL) {
+        return false;
     }
-    return false;
+    return HashPage_has(page, key);
 }
 
 
