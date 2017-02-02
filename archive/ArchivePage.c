@@ -241,10 +241,17 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self)
 }
 
 
-static Errors       ArchivePage_read_item(ArchivePage*  self,
-                                          HashItem*     item,
-                                          char**        _data,
-                                          size_t*       _data_size) {
+static inline void      ArchivePage_close_file(ArchivePage*      self)
+{
+    flock(self->fd, LOCK_UN);
+    close(self->fd);
+    self->fd = (-1);
+}
+
+static Errors           ArchivePage_read_item(ArchivePage*  self,
+                                              HashItem*     item,
+                                              char**        _data,
+                                              size_t*       _data_size) {
     size_t data_size = item->data_size;
     char* data = (char*)malloc(sizeof(char) * data_size);
 
@@ -347,13 +354,11 @@ Errors      ArchivePage_init(ArchivePage*           self,
 
 void        ArchivePage_free(ArchivePage*           self)
 {
+    ArchivePage_close_file(self);
     HashIndex_free(self->index);
     free(self->index);
-    flock(self->fd, LOCK_UN);
-    close(self->fd);
     free(self->filename);
     self->index = NULL;
-    self->fd = (-1);
     self->filename = NULL;
 }
 
