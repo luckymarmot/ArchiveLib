@@ -68,7 +68,7 @@ typedef struct __attribute__((__packed__)){
  * Do not copy in any data yet
  *
  */
-PackedIndex* PackedIndex__init__(size_t capacity) {
+PackedIndex* PackedIndex_init(size_t capacity) {
     // allocate the memory needed
     PackedIndex* p_index = (PackedIndex*) (
             malloc(sizeof(PackedIndex) + sizeof(PackedHashItem) * capacity)
@@ -257,10 +257,11 @@ Errors ArchivePage_init_new_file_header(
 }
 
 
-Errors ArchivePage__init__(
+Errors ArchivePage_init(
         ArchivePage* self,
         HashIndex* index,
-        char* filename, bool new_file) {
+        char* filename,
+		bool new_file) {
     self->index = index;
     self->filename = filename;
     printf("Init File:%s\n", self->filename);
@@ -281,7 +282,7 @@ Errors ArchivePage__init__(
     }
 
     if (new_file) {
-        HashIndex__init__(index);
+        HashIndex_init(index);
         self->index = index;
     } else {
         // Read packed index from disk
@@ -300,7 +301,7 @@ Errors ArchivePage__init__(
         if (error != E_SUCCESS) {
             return error;
         }
-        HashIndex__init__(index);
+        HashIndex_init(index);
         PackedIndex_unpack(p_index, index);
         free(p_index);
         self->index = index;
@@ -318,7 +319,7 @@ Errors ArchivePage_save_to_disk(ArchivePage* self) {
         printf("ArchivePage_write_file_header %d\n", error);
         return error;
     }
-    PackedIndex* p_index = PackedIndex__init__(self->index->items);
+    PackedIndex* p_index = PackedIndex_init(self->index->items);
     error = HashIndex_pack(self->index, p_index);
     if (error != E_SUCCESS) {
         printf("HashIndex_pack %d\n", error);
@@ -400,7 +401,7 @@ Errors ArchivePage_set(ArchivePage* self, char* key, char* data, size_t size) {
     }
     HashItem* item = (HashItem*) (malloc(sizeof(HashItem)));
     item->data_size = size;
-    HashItem__init_with_key__(item, key, 0, size);
+    HashItem_init_with_key(item, key, 0, size);
     Errors error = ArchivePage_write(self, item, data, size);
     if (error != E_SUCCESS) {
         free(item);

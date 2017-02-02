@@ -1,11 +1,9 @@
-//
-// Created by Matthaus Woolard on 27/01/2017.
-//
-
-#include "HashIndex.h"
-
 #ifndef ARCHIVELIB_ARCHIVELAYER_H
 #define ARCHIVELIB_ARCHIVELAYER_H
+
+
+#include "Errors.h"
+#include "HashIndex.h"
 
 /**
  *
@@ -16,13 +14,13 @@
  */
 typedef int file_descriptor;
 
-
-typedef struct __attribute__((__packed__)) ArchiveFileHeader  {
-    unsigned short version;
-    size_t header_start;
-    size_t header_size;
-    size_t data_start;
-    size_t data_size;
+typedef struct __attribute__((__packed__)) ArchiveFileHeader
+{
+    unsigned short          version;
+    size_t                  header_start;
+    size_t                  header_size;
+    size_t                  data_start;
+    size_t                  data_size;
 } ArchiveFileHeader;
 
 /**
@@ -33,24 +31,33 @@ typedef struct __attribute__((__packed__)) ArchiveFileHeader  {
  *  the size of the file.
  *
  */
-typedef struct ArchivePage {
-    HashIndex* index;
-    ArchiveFileHeader* file_header;
-    file_descriptor data_file;
-    char* filename;
+typedef struct ArchivePage
+{
+    HashIndex*              index;
+    ArchiveFileHeader*      file_header;
+    file_descriptor         data_file;
+    char*                   filename;
 } ArchivePage;
 
-Errors ArchivePage__init__(
-        ArchivePage* self,
-        HashIndex* index,
-        char* filename,
-        bool new_file
-);
+Errors      ArchivePage_init(ArchivePage*           self,
+                             HashIndex*             index,
+                             char*                  filename,
+                             bool                   new_file);
 
-Errors ArchivePage_save_to_disk(ArchivePage* self);
-void ArchivePage_free(ArchivePage* self);
-bool ArchivePage_has(ArchivePage* page, char* key);
-Errors ArchivePage_get(ArchivePage* self, char* key, char** data);
-Errors ArchivePage_set(ArchivePage* self, char* key, char* data, size_t size);
+void        ArchivePage_free(ArchivePage*           self);
+
+Errors      ArchivePage_save_to_disk(ArchivePage*   self);
+
+bool        ArchivePage_has(ArchivePage*            page,
+                            char*                   key);
+
+Errors      ArchivePage_get(ArchivePage*            self,
+                            char*                   key,
+                            char**                  data);
+
+Errors      ArchivePage_set(ArchivePage*            self,
+                            char*                   key,
+                            char*                   data,
+                            size_t                  size);
 
 #endif //ARCHIVELIB_ARCHIVELAYER_H
