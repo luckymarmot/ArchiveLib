@@ -35,7 +35,7 @@ typedef struct ArchivePage
 {
     HashIndex*              index;
     ArchiveFileHeader*      file_header;
-    file_descriptor         data_file;
+    file_descriptor         fd;
     char*                   filename;
 } ArchivePage;
 

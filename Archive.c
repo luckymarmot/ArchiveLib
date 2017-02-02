@@ -129,12 +129,23 @@ Errors      Archive_get(Archive*                  self,
     return E_NOT_FOUND;
 }
 
-Errors Archive_set(Archive* self, char* key, char* data, size_t size) {
+
+Errors      Archive_set(Archive*                  self,
+                        char*                     key,
+                        char*                     data,
+                        size_t                    size)
+{
+    Errors error;
+    
+    // if file is already in the archive, consider it a success
     if (Archive_has(self, key)) {
-        // File is already in the archive
         return E_SUCCESS;
     }
-    Errors error =  ArchivePage_set(self->page_stack->page, key, data, size);
+    
+    // write to the last page
+    error = ArchivePage_set(self->page_stack->page, key, data, size);
+    
+    // if page is full, add a new page and try again
     if (error == E_INDEX_MAX_SIZE_EXCEEDED) {
         error = Archive_new_page(self);
         if (error != E_SUCCESS) {
@@ -142,5 +153,6 @@ Errors Archive_set(Archive* self, char* key, char* data, size_t size) {
         }
         error =  ArchivePage_set(self->page_stack->page, key, data, size);
     }
+
     return error;
 }

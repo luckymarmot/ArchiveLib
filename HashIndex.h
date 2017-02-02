@@ -102,7 +102,7 @@ void            HashPage_set_packed(HashPage*           self,
 #pragma mark HashItem
 
 void            HashItem_init_with_key(HashItem*        self,
-                                       char             key[20],
+                                       char*            key,
                                        size_t           data_offset,
                                        size_t           data_size);
 

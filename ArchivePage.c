@@ -13,15 +13,16 @@
 
 #include "ArchivePage.h"
 
-Errors write_to_file(
-        file_descriptor fd,
-        const void* buffer,
-        size_t size,
-        off_t offset) {
+
+static Errors       write_to_file(file_descriptor   fd,
+                                  const void*       buffer,
+                                  size_t            size,
+                                  off_t             offset)
+{
     off_t writen = 0;
     ssize_t r;
     while (writen < size) {
-        r = pwrite(fd, ((char*) buffer) + writen, size - writen, offset + writen);
+        r = pwrite(fd, (char*)buffer + writen, size - writen, offset + writen);
         if (r < 0) {
             return E_SYSTEM_ERROR_ERRNO;
         }
@@ -31,12 +32,11 @@ Errors write_to_file(
 }
 
 
-
-Errors read_from_file(
-        file_descriptor fd,
-        void* buffer,
-        size_t size,
-        off_t offset) {
+static Errors       read_from_file(file_descriptor  fd,
+                                   void*            buffer,
+                                   size_t           size,
+                                   off_t            offset)
+{
     off_t read = 0;
     ssize_t r;
     while (read < size) {
@@ -166,7 +166,7 @@ Errors PackedIndex_write_to_disk(PackedIndex* self, ArchivePage* archive) {
     if ( size > header->header_size) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
-    return write_to_file(archive->data_file, self, size, (off_t) header->header_start);
+    return write_to_file(archive->fd, self, size, (off_t) header->header_start);
 }
 
 
@@ -174,7 +174,7 @@ Errors PackedIndex_read_size(PackedIndex* self, ArchivePage* archive) {
     ArchiveFileHeader* header = archive->file_header;
     // Read in 2 parts just read the first git of the data first
     return read_from_file(
-            archive->data_file,
+            archive->fd,
             self,
             sizeof(PackedIndex),
             (off_t) header->header_start
@@ -189,7 +189,7 @@ Errors PackedIndex_read_from_disk(PackedIndex* self, ArchivePage* archive) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
     return read_from_file(
-            archive->data_file,
+            archive->fd,
             self,
             size,
             (off_t) header->header_start
@@ -197,27 +197,23 @@ Errors PackedIndex_read_from_disk(PackedIndex* self, ArchivePage* archive) {
 }
 
 
-
-
 /**
  *
+ * Open a file descriptor for an archive.
  *
- *
- * Open a file descriptor for an archive. Load the index and read out the size.
- *
- * @param self
- * @param filename
- * @return
+ * @param self The archive page to open.
+ * @param filename Filename of the archive file.
+ * @return An error code.
  */
-Errors ArchivePage_open_file(ArchivePage* self, char filename[]) {
-    // Open a (new) file for read and write with use ownership.
-    self->data_file = open ( filename , O_CREAT | O_RDWR, S_IRUSR | S_IWUSR );
-    if (self->data_file < 0) {
+static Errors ArchivePage_open_file(ArchivePage* self, char* filename) {
+    // open a (new) file for read and write with use ownership.
+    file_descriptor fd = open(filename , O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
+    self->fd = fd;
     return E_SUCCESS;
 }
-
 
 
 /**
@@ -228,7 +224,7 @@ Errors ArchivePage_open_file(ArchivePage* self, char filename[]) {
 Errors ArchivePage_write_file_header(
         ArchivePage* self,
         ArchiveFileHeader* file_header) {
-    return write_to_file(self->data_file, file_header, sizeof(ArchiveFileHeader), 0);
+    return write_to_file(self->fd, file_header, sizeof(ArchiveFileHeader), 0);
 }
 
 
@@ -241,7 +237,7 @@ Errors ArchivePage_write_file_header(
 Errors ArchivePage_read_file_header(
         ArchivePage* self,
         ArchiveFileHeader* file_header) {
-    return read_from_file(self->data_file, file_header, sizeof(ArchiveFileHeader), 0);
+    return read_from_file(self->fd, file_header, sizeof(ArchiveFileHeader), 0);
 }
 
 
@@ -256,11 +252,11 @@ Errors ArchivePage_init_new_file_header(
 }
 
 
-Errors ArchivePage_init(
-        ArchivePage* self,
-        HashIndex* index,
-        char* filename,
-		bool new_file) {
+Errors      ArchivePage_init(ArchivePage*           self,
+                             HashIndex*             index,
+                             char*                  filename,
+                             bool                   new_file)
+{
     self->index = index;
     self->filename = filename;
     printf("Init File:%s\n", self->filename);
@@ -332,16 +328,21 @@ Errors ArchivePage_save_to_disk(ArchivePage* self) {
     return E_SUCCESS;
 }
 
-void ArchivePage_free(ArchivePage* self) {
+
+void        ArchivePage_free(ArchivePage*           self)
+{
     HashIndex_free(self->index);
-    close(self->data_file);
+    close(self->fd);
     free(self);
 }
 
 
-bool ArchivePage_has(ArchivePage* page, char* key) {
+bool        ArchivePage_has(ArchivePage*            page,
+                            char*                   key)
+{
     return HashIndex_has(page->index, key);
 }
+
 
 static Errors       ArchivePage_read(ArchivePage*       self,
                                      HashItem*          item,
@@ -352,7 +353,7 @@ static Errors       ArchivePage_read(ArchivePage*       self,
 
     // read from file
     Errors error = read_from_file(
-        self->data_file,
+        self->fd,
         data,
         data_size,
         (off_t)(self->file_header->data_start + item->data_offset)
@@ -371,32 +372,34 @@ static Errors       ArchivePage_read(ArchivePage*       self,
     return E_SUCCESS;
 }
 
-Errors ArchivePage_write(
-        ArchivePage* self,
-        HashItem* item,
-        char* data,
-        size_t size) {
 
-    // The item is positioned at the end of the files data section
+static Errors       ArchivePage_write(ArchivePage*      self,
+                                      HashItem*         item,
+                                      char*             data,
+                                      size_t            size) {
+
+    // the item is positioned at the end of the files data section
     item->data_offset = self->file_header->data_size;
     item->data_size = size;
 
+    // write to file
     Errors error = write_to_file(
-            self->data_file,
-            data,
-            size,
-            (off_t) (item->data_offset + self->file_header->data_start)
+        self->fd,
+        data,
+        size,
+        (off_t)(self->file_header->data_start + item->data_offset)
     );
 
     if (error != E_SUCCESS) {
         return error;
     }
 
-    // Update the data size
+    // update the data size
     self->file_header->data_size += size;
 
     return E_SUCCESS;
 }
+
 
 Errors      ArchivePage_get(ArchivePage*            self,
                             char*                   key,
@@ -409,19 +412,23 @@ Errors      ArchivePage_get(ArchivePage*            self,
     return ArchivePage_read(self, item, _data, _data_size);
 }
 
-Errors ArchivePage_set(ArchivePage* self, char* key, char* data, size_t size) {
+
+Errors      ArchivePage_set(ArchivePage*            self,
+                            char*                   key,
+                            char*                   data,
+                            size_t                  size)
+{
+    // if the page is full, return an error
     if (self->index->items >= MAX_ITEMS_PER_INDEX) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
-    HashItem* item = (HashItem*) (malloc(sizeof(HashItem)));
-    item->data_size = size;
-    HashItem_init_with_key(item, key, 0, size);
-    Errors error = ArchivePage_write(self, item, data, size);
+    
+    HashItem item;
+    HashItem_init_with_key(&item, key, 0, size);
+    Errors error = ArchivePage_write(self, &item, data, size);
     if (error != E_SUCCESS) {
-        free(item);
         return error;
     }
-    error = HashIndex_set(self->index, item);
-    free(item);
+    error = HashIndex_set(self->index, &item);
     return error;
 }

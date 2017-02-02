@@ -18,12 +18,12 @@
  * @param data_offset the possition in the data archive
  * @param data_size the lenght of the data pointed to
  */
-void HashItem_init_with_key(
-        HashItem* self,
-        char key[20],
-        size_t data_offset,
-        size_t data_size) {
-    memcpy(self->key, key, sizeof(char)*20);
+void            HashItem_init_with_key(HashItem*        self,
+                                       char*            key,
+                                       size_t           data_offset,
+                                       size_t           data_size)
+{
+    memcpy(self->key, key, sizeof(char) * 20);
     self->data_offset = data_offset;
     self->data_size = data_size;
 }
