@@ -60,7 +60,7 @@ void        ArchivePage_free(ArchivePage*           self);
  @param self The archive page.
  @return An error code.
  */
-Errors      ArchivePage_save(const ArchivePage*   	self);
+Errors      ArchivePage_save(const ArchivePage*     self);
 
 
 /**

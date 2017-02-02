@@ -247,7 +247,7 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self)
 
  @param self The archive.
  */
-static inline void      ArchivePage_close_file(ArchivePage*      	self)
+static inline void      ArchivePage_close_file(ArchivePage*         self)
 {
     flock(self->fd, LOCK_UN);
     close(self->fd);
@@ -255,10 +255,10 @@ static inline void      ArchivePage_close_file(ArchivePage*      	self)
 }
 
 
-static Errors           ArchivePage_read_item(const ArchivePage*	self,
-                                              const HashItem*     	item,
-                                              char**        		_data,
-                                              size_t*       		_data_size)
+static Errors           ArchivePage_read_item(const ArchivePage*    self,
+                                              const HashItem*       item,
+                                              char**                _data,
+                                              size_t*               _data_size)
 {
     size_t data_size = item->data_size;
     char* data = (char*)malloc(sizeof(char) * data_size);
@@ -374,7 +374,7 @@ void        ArchivePage_free(ArchivePage*           self)
 }
 
 
-Errors      ArchivePage_save(const ArchivePage*   	self)
+Errors      ArchivePage_save(const ArchivePage*     self)
 {
     Errors error;
     

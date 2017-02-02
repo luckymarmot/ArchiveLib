@@ -18,10 +18,10 @@ unsigned short HASH_PAGE_INITIAL_CAPACITY = 10;
  @param size Data size of the item in the data.
  @param offset Data offset of the item in the data.
  */
-static inline void	HashItem_init_with_key(HashItem*        self,
-                    	                   const char*      key,
+static inline void  HashItem_init_with_key(HashItem*        self,
+                                           const char*      key,
                                            size_t           offset,
-                        	               size_t           size)
+                                           size_t           size)
 {
     memcpy(self->key, key, 20);
     self->data_offset = offset;
@@ -85,8 +85,8 @@ static inline const HashItem* HashPage_get(HashPage*    self,
  @param key The item key.
  @return A boolean representing whether the key is in the hash page.
  */
-static inline bool      HashPage_has(HashPage*      	self,
-                                     const char*    	key)
+static inline bool      HashPage_has(HashPage*          self,
+                                     const char*        key)
 {
     return NULL != HashPage_get(self, key);
 }
@@ -161,8 +161,8 @@ void            HashIndex_free(HashIndex*               self)
 }
 
 
-HashPage*       HashIndex_get_or_create_page(HashIndex* 	self,
-                                             const char*	key)
+HashPage*       HashIndex_get_or_create_page(HashIndex*     self,
+                                             const char*    key)
 {
     char lookup_chr = key[0];
     HashPage* page = self->pages[lookup_chr];
@@ -175,8 +175,8 @@ HashPage*       HashIndex_get_or_create_page(HashIndex* 	self,
 }
 
 
-bool            HashIndex_has(HashIndex*                	self,
-                              const char*               	key)
+bool            HashIndex_has(HashIndex*                    self,
+                              const char*                   key)
 {
     HashPage* page = HashIndex_get_page(self, key);
     if (page == NULL) {
@@ -186,7 +186,7 @@ bool            HashIndex_has(HashIndex*                	self,
 }
 
 
-Errors          HashIndex_set(HashIndex*                	self,
+Errors          HashIndex_set(HashIndex*                    self,
                               const char*                   key,
                               size_t                        offset,
                               size_t                        size)
@@ -201,8 +201,8 @@ Errors          HashIndex_set(HashIndex*                	self,
 }
 
 
-const HashItem* HashIndex_get(HashIndex*                	self,
-                              const char*               	key)
+const HashItem* HashIndex_get(HashIndex*                    self,
+                              const char*                   key)
 {
     HashPage* page = HashIndex_get_page(self, key);
     if (page == NULL) {

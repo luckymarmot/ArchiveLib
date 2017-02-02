@@ -11,8 +11,8 @@
 
 #pragma mark HashItem Pack
 
-static inline void      HashItem_pack(const HashItem*           	self,
-                                      PackedHashItem*           	packed)
+static inline void      HashItem_pack(const HashItem*               self,
+                                      PackedHashItem*               packed)
 {
     memcpy(packed->key, self->key, 20);
     packed->data_offset = htobe32((__uint32_t)self->data_offset);
@@ -20,7 +20,7 @@ static inline void      HashItem_pack(const HashItem*           	self,
 }
 
 
-static inline void      HashItem_unpack(HashItem*               	self,
+static inline void      HashItem_unpack(HashItem*                   self,
                                         const PackedHashItem*       packed)
 {
     memcpy(self->key, packed->key, 20);
