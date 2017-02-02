@@ -5,15 +5,20 @@
 #include "Errors.h"
 #include "HashIndex.h"
 
+
 /**
  *
- * file_descriptor type is nicer like this than as an it.
+ * A type for file descriptors. It is nicer like this than as an `int`.
  * We use pread and pwrite so cant use the fopen but rather open.
  *
- * We dont cane about Windows/NT so this is no issue :)
+ * We don't care about Windows NT compatibility.
  */
 typedef int file_descriptor;
 
+
+/**
+ * A private packed structure for writing archive's file header to file.
+ */
 typedef struct __attribute__((__packed__)) ArchiveFileHeader
 {
     unsigned short          version;
@@ -22,6 +27,7 @@ typedef struct __attribute__((__packed__)) ArchiveFileHeader
     size_t                  data_start;
     size_t                  data_size;
 } ArchiveFileHeader;
+
 
 /**
  *
@@ -35,9 +41,10 @@ typedef struct ArchivePage
 {
     HashIndex*              index;
     ArchiveFileHeader*      file_header;
-    file_descriptor         data_file;
+    file_descriptor         fd;
     char*                   filename;
 } ArchivePage;
+
 
 Errors      ArchivePage_init(ArchivePage*           self,
                              HashIndex*             index,
@@ -46,14 +53,15 @@ Errors      ArchivePage_init(ArchivePage*           self,
 
 void        ArchivePage_free(ArchivePage*           self);
 
-Errors      ArchivePage_save_to_disk(ArchivePage*   self);
+Errors      ArchivePage_save(ArchivePage*           self);
 
 bool        ArchivePage_has(ArchivePage*            page,
                             char*                   key);
 
 Errors      ArchivePage_get(ArchivePage*            self,
                             char*                   key,
-                            char**                  data);
+                            char**                  _data,
+                            size_t*                 _data_size);
 
 Errors      ArchivePage_set(ArchivePage*            self,
                             char*                   key,

@@ -18,12 +18,12 @@
  * @param data_offset the possition in the data archive
  * @param data_size the lenght of the data pointed to
  */
-void HashItem_init_with_key(
-        HashItem* self,
-        char key[20],
-        size_t data_offset,
-        size_t data_size) {
-    memcpy(self->key, key, sizeof(char)*20);
+void            HashItem_init_with_key(HashItem*        self,
+                                       char*            key,
+                                       size_t           data_offset,
+                                       size_t           data_size)
+{
+    memcpy(self->key, key, sizeof(char) * 20);
     self->data_offset = data_offset;
     self->data_size = data_size;
 }
@@ -199,7 +199,7 @@ void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
  * @return the new hash index
  */
 void HashIndex_init(HashIndex* self) {
-    self->items = 0;
+    self->n_items = 0;
     memset(self->pages, 0, sizeof(HashIndex *[256]));
 }
 
@@ -284,12 +284,12 @@ bool HashIndex_has(HashIndex* self, char* key) {
  * @return the hash index, the pointer will not be changed.
  */
 Errors HashIndex_set(HashIndex* self, HashItem* item) {
-    if (self->items >= MAX_ITEMS_PER_INDEX) {
+    if (self->n_items >= MAX_ITEMS_PER_INDEX) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
     HashPage* page = HashIndex_get_or_create_page(self, item->key);
     HashPage_set(page, item);
-    self->items += 1;
+    self->n_items += 1;
     return E_SUCCESS;
 }
 
