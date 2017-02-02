@@ -11,6 +11,7 @@ typedef enum Errors
     E_FILE_READ_ERROR               = -4,
     E_NOT_FOUND                     = -5,
     E_UNKNOWN_ARCHIVE_VERSION       = -6,
+    E_INVALID_ARCHIVE_HEADER        = -7,
 } Errors;
 
 

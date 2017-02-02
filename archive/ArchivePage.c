@@ -134,8 +134,7 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
         file_header.data_start != ArchivePage_data_start ||
         file_header.capacity != ArchivePage_capacity ||
         file_header.n_items > file_header.capacity) {
-        // @TODO rename E_INDEX_MAX_SIZE_EXCEEDED to something like mismatch size
-        return E_INDEX_MAX_SIZE_EXCEEDED;
+        return E_INVALID_ARCHIVE_HEADER;
     }
     
     // populate the ArchivePage fields
@@ -214,11 +213,10 @@ static inline Errors    ArchivePage_write_file_header(ArchivePage*       self)
 
 
 /**
- *
- * Open a file descriptor for an archive.
- *
- * @param self The archive page to open.
- * @return An error code.
+ Open the archive's file descriptor.
+
+ @param self The archive.
+ @return An error code.
  */
 static inline Errors    ArchivePage_open_file(ArchivePage*      self)
 {
@@ -241,6 +239,11 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self)
 }
 
 
+/**
+ Close the archive's file descriptor.
+
+ @param self The archive.
+ */
 static inline void      ArchivePage_close_file(ArchivePage*      self)
 {
     flock(self->fd, LOCK_UN);
@@ -248,10 +251,12 @@ static inline void      ArchivePage_close_file(ArchivePage*      self)
     self->fd = (-1);
 }
 
+
 static Errors           ArchivePage_read_item(ArchivePage*  self,
                                               HashItem*     item,
                                               char**        _data,
-                                              size_t*       _data_size) {
+                                              size_t*       _data_size)
+{
     size_t data_size = item->data_size;
     char* data = (char*)malloc(sizeof(char) * data_size);
 
@@ -280,7 +285,8 @@ static Errors           ArchivePage_read_item(ArchivePage*  self,
 static Errors       ArchivePage_write_item(ArchivePage* self,
                                            HashItem*    item,
                                            char*        data,
-                                           size_t       size) {
+                                           size_t       size)
+{
 
     // the item is positioned at the end of the files data section
     item->data_offset = self->data_size;
@@ -339,8 +345,8 @@ Errors      ArchivePage_init(ArchivePage*           self,
     } else {
         error = ArchivePage_read_file_header(self);
         if (error != E_SUCCESS) {
+            ArchivePage_close_file(self);
             free(self->index);
-            close(self->fd);
             free(self->filename);
             self->index = NULL;
             self->filename = NULL;
