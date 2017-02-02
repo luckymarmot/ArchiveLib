@@ -11,8 +11,8 @@
 
 #pragma mark HashItem Pack
 
-static inline void      HashItem_pack(HashItem*                 self,
-                                      PackedHashItem*           packed)
+static inline void      HashItem_pack(const HashItem*           	self,
+                                      PackedHashItem*           	packed)
 {
     memcpy(packed->key, self->key, 20);
     packed->data_offset = htobe32((__uint32_t)self->data_offset);
@@ -20,8 +20,8 @@ static inline void      HashItem_pack(HashItem*                 self,
 }
 
 
-static inline void      HashItem_unpack(HashItem*               self,
-                                        PackedHashItem*         packed)
+static inline void      HashItem_unpack(HashItem*               	self,
+                                        const PackedHashItem*       packed)
 {
     memcpy(self->key, packed->key, 20);
     self->data_offset   = be32toh(packed->data_offset);
@@ -29,18 +29,20 @@ static inline void      HashItem_unpack(HashItem*               self,
 }
 
 
-static inline void      HashPage_set_packed(HashPage*           self,
-                                            PackedHashItem*     item)
+static inline void      HashPage_set_packed(HashPage*               self,
+                                            const PackedHashItem*   item)
 {
-    if (self->length + 1 >= self->allocated) {
-        // We need to expand the object
-        self->items = realloc(self->items, (sizeof(HashItem) * self->allocated * 2));
-        self->allocated = (unsigned short) (self->allocated * 2);
+    // if needed, increase the capacity
+    if (self->n_items >= self->capacity) {
+        unsigned short new_capacity = self->capacity * 2;
+        self->items = realloc(self->items, (sizeof(HashItem) * new_capacity));
+        self->capacity = new_capacity;
     }
 
-    HashItem_unpack(&(self->items[self->length]), item);
-    self->length += 1;
+    HashItem_unpack(&(self->items[self->n_items]), item);
+    self->n_items += 1;
 }
+
 
 Errors    HashIndex_pack(HashIndex*             self,
                          PackedHashItem*        items,
@@ -56,13 +58,13 @@ Errors    HashIndex_pack(HashIndex*             self,
     for(i = 0; i < 256; i = i + 1 ){
         page = self->pages[i];
         if (page != NULL) {
-            if (n_items + page->length > capacity) {
+            if (n_items + page->n_items > capacity) {
                 return E_INDEX_OUT_OF_BOUNDS;
             }
-            for (j = 0; j < page->length; ++j) {
+            for (j = 0; j < page->n_items; ++j) {
                 HashItem_pack(&page->items[j], &(items[n_items + j]));
             }
-            n_items += page->length;
+            n_items += page->n_items;
         }
     }
     *_n_items = n_items;

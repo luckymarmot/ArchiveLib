@@ -8,9 +8,8 @@ static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 
 
 /**
- *
  * A HashItem that maps a key (20 bytes)
- * to a pointer in the data part of your archvie
+ * to a pointer in the data part of the file system archive.
  */
 typedef struct HashItem
 {
@@ -26,16 +25,14 @@ typedef struct HashItem
  */
 typedef struct HashPage
 {
-    unsigned short          allocated;
-    unsigned short          length;
+    u_int32_t               capacity;
+    u_int32_t               n_items;
     HashItem*               items;
 } HashPage;
 
 
 /**
- *
  * Hash Index keeps a collection of pages mapped by the first char of the key.
- *
  */
 typedef struct HashIndex
 {
@@ -49,29 +46,77 @@ typedef struct HashIndex
 /**
  Initializes a new empty index.
 
- @param self The index to initialize.
+ @param self The index.
  */
-void            HashIndex_init(HashIndex*               self);
+void            HashIndex_init(HashIndex*               	self);
 
-void            HashIndex_free(HashIndex*               self);
 
-HashPage*       HashIndex_get_or_create_page(HashIndex* self,
-                                             char       key[20]);
+/**
+ Frees the index.
 
-bool            HashIndex_has(HashIndex*                self,
-                              char*                     key);
+ @param self The index to free.
+ */
+void            HashIndex_free(HashIndex*               	self);
 
-HashItem*       HashIndex_get(HashIndex*                self,
-                              char*                     key);
 
-Errors          HashIndex_set(HashIndex*                self,
-                              HashItem*                 item);
+/**
+ Gets an existing page for the key, or create a new one.
+
+ @param self The index.
+ @param key The key for the page.
+ @return The page.
+ */
+HashPage*       HashIndex_get_or_create_page(HashIndex* 	self,
+                                             const char*	key);
+
+
+/**
+ Checks if an object if in the index.
+
+ @param self The index.
+ @param key The key to lookup (a 20 bytes binary string).
+ @return A boolearn representing whether the key has been found.
+ */
+bool            HashIndex_has(HashIndex*                	self,
+                              const char*               	key);
+
+
+/**
+ Retrieves an hash item from the index by its key.
+
+ @param self The index.
+ @param key The key to lookup (a 20 bytes binary string).
+ @return The hash item.
+ */
+const HashItem* HashIndex_get(HashIndex*                	self,
+                              const char*               	key);
+
+
+/**
+ Sets an item in the index.
+
+ @param self The index.
+ @param item The item to insert.
+ @return An error code.
+ */
+Errors          HashIndex_set(HashIndex*                	self,
+                              const HashItem*           	item);
 
 #pragma mark HashItem
 
-void            HashItem_init_with_key(HashItem*        self,
-                                       char*            key,
-                                       size_t           data_offset,
-                                       size_t           data_size);
+
+/**
+ Initializes a HashItem for a given key.
+
+ @param self The HashItem.
+ @param key The key (20 bytes).
+ @param data_offset Data offset of the item in the data.
+ @param data_size Data size of the item in the data.
+ */
+void            HashItem_init_with_key(HashItem*        	self,
+                                       char*            	key,
+                                       size_t           	data_offset,
+                                       size_t           	data_size);
+
 
 #endif //ARCHIVELIB_HASHINDEX_H
