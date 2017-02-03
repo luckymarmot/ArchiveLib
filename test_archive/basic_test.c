@@ -17,6 +17,36 @@ static void test_ArchivePage(void **state) {
 }
 
 
+static inline void rand_key(char* key)
+{
+    u_int32_t a = arc4random();
+    u_int32_t b = arc4random();
+    u_int32_t c = arc4random();
+    u_int32_t d = arc4random();
+    u_int32_t e = arc4random();
+    key[0] = a & 0xff;
+    key[1] = (a & 0xff00) >> 8;
+    key[2] = (a & 0xff0000) >> 16;
+    key[3] = (a & 0xff000000) >> 24;
+    key[4 + 0] = b & 0xff;
+    key[4 + 1] = (b & 0xff00) >> 8;
+    key[4 + 2] = (b & 0xff0000) >> 16;
+    key[4 + 3] = (b & 0xff000000) >> 24;
+    key[8 + 0] = c & 0xff;
+    key[8 + 1] = (c & 0xff00) >> 8;
+    key[8 + 2] = (c & 0xff0000) >> 16;
+    key[8 + 3] = (c & 0xff000000) >> 24;
+    key[12 + 0] = d & 0xff;
+    key[12 + 1] = (d & 0xff00) >> 8;
+    key[12 + 2] = (d & 0xff0000) >> 16;
+    key[12 + 3] = (d & 0xff000000) >> 24;
+    key[16 + 0] = e & 0xff;
+    key[16 + 1] = (e & 0xff00) >> 8;
+    key[16 + 2] = (e & 0xff0000) >> 16;
+    key[16 + 3] = (e & 0xff000000) >> 24;
+}
+
+
 /**
  * Test archive init
  */
@@ -182,16 +212,36 @@ static void test_Archive_set(void **state) {
 
     // Free this archive so we can open again
     char** filenames;
+    char filename[10000];
     size_t _n_files;
     Archive_save(&archive, &filenames, &_n_files);
+    strcpy(filename, filenames[0]);
+
     Archive_free(&archive);
 
     Archive archive2;
     Archive_init(&archive2, "./");
-    printf("FILENAME %s", filenames[0]);
-    Errors e = Archive_add_page_by_name(&archive2, filenames[0]+2);
+    Errors e = Archive_add_page_by_name(&archive2, filename+2);
     assert_int_equal(e, 0);
 
+    assert_true(Archive_has(&archive2, key));
+
+    char *data2;
+    size_t data_size;
+    e = Archive_get(&archive2, key, &data2, &data_size);
+    assert_int_equal(e, 0);
+    assert_string_equal(data2, "data");
+    assert_int_equal(data_size, 5);
+    Errors ef;
+    // Test that set adds to a new page
+    for (int i = 0; i < MAX_ITEMS_PER_INDEX * 10; ++i) {
+        rand_key(key);
+        ef = Archive_set(&archive2, key, "data", 5);
+        assert_int_equal(ef, 0);
+        assert_true(Archive_has(&archive2, key));
+        ef = Archive_set(&archive2, key, "data", 5);
+    }
+    assert_int_equal(archive2.n_pages, 11);
 }
 
 
