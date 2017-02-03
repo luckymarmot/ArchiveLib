@@ -76,7 +76,7 @@ static void test_Archive_free(void **state) {
 
 /**
  *
- *  Test archive free
+ *  Test archive has
  */
 static void test_Archive_has(void **state) {
     Archive archive;
@@ -127,11 +127,35 @@ static void test_Archive_has(void **state) {
 
     assert_true(Archive_has(&archive, key3));
 
+    /// Add a new page on 0
+    char key4[20] = {
+            0x00, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 102
+    };
+    assert_false(Archive_has(&archive, key4));
+    HashIndex_set(
+            archive.page_stack->next->page->index,
+            key4, 1, 1
+    );
+    assert_true(Archive_has(&archive, key4));
 
-
-
-
+    /// Add new page on 255
+    /// Add a new page on 0
+    char key5[20] = {
+            (char) 0xFF, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 102
+    };
+    assert_false(Archive_has(&archive, key5));
+    HashIndex_set(
+            archive.page_stack->next->page->index,
+            key5, 1, 1
+    );
+    assert_true(Archive_has(&archive, key5));
 }
+
+
 
 
 
