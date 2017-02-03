@@ -76,30 +76,30 @@ void      HashIndex_unpack(HashIndex*           self,
                            PackedHashItem*      items,
                            size_t               n_items)
 {
-    // Packed indexes are saved in a sequence so a while loop
-    // is best here to reduce lookups;
-    size_t current_item_index = 0;
-    PackedHashItem* current_item;
-    HashPage* current_page;
-    char current_page_char;
-    if (n_items > 0) {
-        current_item = &items[current_item_index];
-        current_page_char = current_item->key[0];
-        current_page = HashIndex_get_or_create_page(self, current_item->key);
-    } else {
+    if (n_items == 0) {
+        self->n_items = 0;
         return;
     }
-    while (current_item_index < n_items) {
+    
+    // packed indexes are saved in a sequence so a while loop
+    // is best here to reduce lookups
+    size_t i;
+    PackedHashItem* current_item = items;
+    unsigned char item_chr;
+    unsigned char current_page_chr = current_item->key[0];
+    HashPage* current_page = HashIndex_get_or_create_page(self, current_item->key);
+    
+    for (i = 0; i < n_items; i++) {
         // this is part of a packed struct so memory is managed outside
         // Could do a spead up hear loop until there is a change of page and
         // then mass copy all at once to the old page.
-        current_item = &items[current_item_index];
-        if (current_page_char != current_item->key[0]) {
+        item_chr = current_item->key[0];
+        if (current_page_chr != item_chr) {
             current_page = HashIndex_get_or_create_page(self, current_item->key);
-            current_page_char = current_item->key[0];
+            current_page_chr = item_chr;
         }
         HashPage_set_packed(current_page, current_item);
-        current_item_index += 1;
+        current_item++;
     }
-    self->n_items = current_item_index;
+    self->n_items = i;
 }

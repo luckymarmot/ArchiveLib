@@ -5,7 +5,7 @@
 
 #include "HashIndex.h"
 
-unsigned short HASH_PAGE_INITIAL_CAPACITY = 10;
+static size_t HASH_PAGE_INITIAL_CAPACITY = 10;
 
 
 #pragma mark - HashItem
@@ -39,8 +39,7 @@ static inline void  HashItem_init_with_key(HashItem*        self,
  */
 static inline void  HashPage_init(HashPage*         self)
 {
-    self->items = (HashItem*)malloc(sizeof(HashItem) *
-                                    HASH_PAGE_INITIAL_CAPACITY);
+    self->items = (HashItem*)malloc(sizeof(HashItem) * HASH_PAGE_INITIAL_CAPACITY);
     self->capacity = HASH_PAGE_INITIAL_CAPACITY;
     self->n_items = 0;
 }
@@ -49,11 +48,11 @@ static inline void  HashPage_init(HashPage*         self)
 /**
  Frees the hash page. This won't free the page structure itself.
 
- @param page The hash page to free.
+ @param self The hash page to free.
  */
-static inline void  HashPage_free(HashPage*         page)
+static inline void  HashPage_free(HashPage*         self)
 {
-    free(page->items);
+    free(self->items);
 }
 
 
@@ -111,7 +110,7 @@ static inline void        HashPage_set(HashPage*        self,
         if (new_capacity <= HASH_PAGE_INITIAL_CAPACITY) {
             new_capacity = HASH_PAGE_INITIAL_CAPACITY;
         }
-        self->items = realloc(self->items, sizeof(HashItem) * new_capacity);
+        self->items = (HashItem*)realloc(self->items, sizeof(HashItem) * new_capacity);
         self->capacity = new_capacity;
     }
 
@@ -154,7 +153,7 @@ void            HashIndex_init(HashIndex*               self)
 void            HashIndex_free(HashIndex*               self)
 {
     HashPage* page;
-    for (int j = 0; j < 255; ++j) {
+    for (int j = 0; j <= 255; ++j) {
         page = self->pages[j];
         if (page != NULL) {
             HashPage_free(page);
