@@ -8,6 +8,7 @@
 
 #include <ArchivePage.h>
 #include <Archive.h>
+#include <errno.h>
 
 #include <cmocka.h>
 #include <malloc/malloc.h>
@@ -373,8 +374,29 @@ static void test_Archive_set__index_inserts(void **state) {
     assert_false(Archive_has(&archive_layers_0_repeat, key));
     assert_int_equal(archive_layers_0_repeat.pages[0].index->n_items, 1);
     assert_int_equal(archive_layers_0_repeat.pages[0].data_size, size);
+
+    Archive_free(&archive_layers_0_repeat);
+
+    Archive archive_layers_2;
+    Archive_init(&archive_layers_2, "./");
+    Archive_add_page_by_name(&archive_layers_2, saves.files[1].filename);
+    assert_int_equal(archive_layers_2.pages[0].index->n_items, 3);
 }
 
+
+/**
+ *
+ *  Test archive has
+ */
+static void test_Archive_add_page_by_name(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    /// Open missing file
+    char filename[13] = "file-missing";
+    Errors e = Archive_add_page_by_name(&archive, filename);
+    assert_int_equal(e, -1);
+    assert_int_equal(errno, ENOENT);
+}
 
 
 /* A test_archive case that does nothing and succeeds. */
@@ -483,7 +505,8 @@ int main(void) {
             cmocka_unit_test(test_Archive_free),
             cmocka_unit_test(test_Archive_has),
             cmocka_unit_test(test_Archive_set),
-            cmocka_unit_test(test_Archive_set__index_inserts)
+            cmocka_unit_test(test_Archive_set__index_inserts),
+            cmocka_unit_test(test_Archive_add_page_by_name)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

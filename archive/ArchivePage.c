@@ -223,10 +223,16 @@ static inline Errors    ArchivePage_write_file_header(const ArchivePage* self)
  @param self The archive.
  @return An error code.
  */
-static inline Errors    ArchivePage_open_file(ArchivePage*      self)
+static inline Errors    ArchivePage_open_file(ArchivePage*      self,
+                                              bool              new_file)
 {
     // open a (new) file for read and write with use ownership
-    file_descriptor fd = open(self->filename , O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    file_descriptor fd;
+    if (new_file) {
+        fd = open(self->filename , O_NONBLOCK | O_EXCL | O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    } else {
+        fd = open(self->filename , O_NONBLOCK | O_RDWR, S_IRUSR | S_IWUSR);
+    }
     if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
@@ -333,7 +339,7 @@ Errors      ArchivePage_init(ArchivePage*           self,
     memcpy(self->filename, filename, filename_size);
 
     // open file descriptor
-    error = ArchivePage_open_file(self);
+    error = ArchivePage_open_file(self, new_file);
     if (error != E_SUCCESS) {
         printf("File not opened, error = %s\n", strerror(errno));
         free(self->filename);
