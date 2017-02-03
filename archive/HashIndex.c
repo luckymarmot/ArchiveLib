@@ -67,12 +67,19 @@ static inline void  _HashPage_free(HashPage*                self)
 static inline const HashItem* _HashPage_get(HashPage*       self,
                                             const char*     key)
 {
-    HashItem *item;
-    for (int i = 0; i < self->n_items; ++i) {
-        item = self->items + i;
-        if (memcmp(item->key, key, 20) == 0) {
+    size_t n_items = self->n_items;
+    HashItem *item = self->items;
+    for (int i = 0; i < n_items; ++i) {
+        char* item_key = item->key;
+        // the first byte doesn't need to be compared as it's in the hash key
+        // the two first bytes are compared inline here to reduce the use of
+        // memcmp (which is more expensive)
+        if (item_key[1] == key[1] &&
+            item_key[2] == key[2] &&
+            memcmp(item_key + 3, key + 3, 17) == 0) {
             return item;
         }
+        item++;
     }
     return NULL;
 }
