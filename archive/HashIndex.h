@@ -8,6 +8,7 @@
 #define _MAX_ITEMS_PER_INDEX 2000
 static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 
+#pragma mark - Structs
 
 /**
  * A HashItem that maps a key (20 bytes)
@@ -43,14 +44,15 @@ typedef struct HashIndex
 } HashIndex;
 
 
-#pragma mark HashIndex
+#pragma mark - HashIndex (Public API)
+
 
 /**
  Initializes a new empty index.
 
  @param self The index.
  */
-void            HashIndex_init(HashIndex*                 self);
+void      HashIndex_init(HashIndex*                   self);
 
 
 /**
@@ -58,7 +60,7 @@ void            HashIndex_init(HashIndex*                 self);
 
  @param self The index to free.
  */
-void            HashIndex_free(HashIndex*                 self);
+void      HashIndex_free(HashIndex*                   self);
 
 
 /**
@@ -68,8 +70,8 @@ void            HashIndex_free(HashIndex*                 self);
  @param key The key for the page.
  @return The page.
  */
-HashPage*       HashIndex_get_or_create_page(HashIndex*   self,
-                                             const char*  key);
+HashPage* HashIndex_get_or_create_page(HashIndex*     self,
+                                       const char*    key);
 
 
 /**
@@ -79,8 +81,8 @@ HashPage*       HashIndex_get_or_create_page(HashIndex*   self,
  @param key The key to lookup (a 20 bytes binary string).
  @return A boolearn representing whether the key has been found.
  */
-bool            HashIndex_has(HashIndex*                  self,
-                              const char*                 key);
+bool      HashIndex_has(HashIndex*                    self,
+                        const char*                   key);
 
 
 /**
@@ -90,8 +92,8 @@ bool            HashIndex_has(HashIndex*                  self,
  @param key The key to lookup (a 20 bytes binary string).
  @return The hash item.
  */
-const HashItem* HashIndex_get(HashIndex*                  self,
-                              const char*                 key);
+const HashItem* HashIndex_get(HashIndex*              self,
+                              const char*             key);
 
 
 /**
@@ -103,10 +105,9 @@ const HashItem* HashIndex_get(HashIndex*                  self,
  @param offset Data offset in the file.
  @return An error code.
  */
-Errors          HashIndex_set(HashIndex*                  self,
-                              const char*                   key,
-                              size_t                        offset,
-                              size_t                        size);
-
+Errors    HashIndex_set(HashIndex*                    self,
+                        const char*                   key,
+                        size_t                        offset,
+                        size_t                        size);
 
 #endif //ARCHIVELIB_HASHINDEX_H
