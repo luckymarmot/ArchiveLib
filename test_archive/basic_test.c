@@ -10,12 +10,69 @@
 #include <Archive.h>
 
 #include <cmocka.h>
-
+#include <malloc/malloc.h>
 
 static void test_ArchivePage(void **state) {
     assert_int_equal(sizeof(ArchivePage), 32);
 }
 
+
+/**
+ * Test archive init
+ */
+static void test_Archive_init(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    assert_int_equal(archive.n_pages, 0);
+    assert_null(archive.page_stack);
+    assert_string_equal(archive.base_file_path, "./");
+
+    // Test that the file name is copied.
+    char* f = malloc(sizeof(char[3]));
+    memcpy(f, "./", 3);
+    Archive archive2;
+    Archive_init(&archive2, f);
+    free(f);
+    assert_string_equal(archive2.base_file_path, "./");
+}
+
+
+/**
+ *
+ *  Test archive free
+ */
+static void test_Archive_free(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    Archive_add_empty_page(&archive);
+    assert_int_equal(archive.n_pages, 1);
+    assert_non_null(archive.page_stack);
+    assert_string_equal(archive.base_file_path, "./");
+
+    ArchiveListItem* page_stack = archive.page_stack;
+    ArchivePage* page = archive.page_stack->page;
+    char* filename = page->filename;
+    HashIndex* index = page->index;
+
+    assert_int_not_equal(malloc_size(page), 0);
+    assert_int_not_equal(malloc_size(page_stack), 0);
+    assert_int_not_equal(malloc_size(filename), 0);
+    assert_int_not_equal(malloc_size(index), 0);
+
+    Archive_free(&archive);
+    test_free(archive.base_file_path);
+    assert_null(archive.base_file_path);
+    assert_null(archive.page_stack);
+    assert_int_equal(archive.n_pages, 0);
+
+    assert_int_equal(malloc_size(page), 0);
+    assert_int_equal(malloc_size(page_stack), 0);
+    assert_int_equal(malloc_size(archive.page_stack), 0);
+    assert_int_equal(malloc_size(archive.base_file_path), 0);
+
+    assert_int_equal(malloc_size(filename), 0);
+    assert_int_equal(malloc_size(index), 0);
+}
 
 /* A test_archive case that does nothing and succeeds. */
 static void test_archive_init(void **state) {
@@ -139,6 +196,8 @@ int main(void) {
             cmocka_unit_test(test_ArchivePage_open_file_locks_file),
             cmocka_unit_test(test_HashIndex_init),
             cmocka_unit_test(test_ArchivePage),
+            cmocka_unit_test(test_Archive_init),
+            cmocka_unit_test(test_Archive_free)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
