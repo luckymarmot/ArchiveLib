@@ -59,6 +59,71 @@ Errors _set_data_n(Archive* archive, size_t n_items, char** _keys)
 static const char s_key1[20] = {21, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
 static const char s_key2[20] = {124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124};
 
+static inline Errors _read_key(Archive* archive, const char* key)
+{
+    Errors error;
+    char* data;
+    size_t data_size;
+    
+    error = Archive_get(archive, key, &data, &data_size);
+    if (error != E_SUCCESS) {
+        return error;
+    }
+    printf("Length = %lu, Data = %.*s\n", data_size, (int)data_size, data);
+    free(data);
+    
+    return E_SUCCESS;
+}
+
+Errors _check_archive(Archive* archive, char* keys, size_t n_items)
+{
+    Errors error;
+    char* data;
+    size_t data_size;
+    
+    // has static key
+    if (!Archive_has(archive, s_key1)) {
+        printf("Failed on has(s_key1) (not found)\n");
+        return E_NOT_FOUND;
+    }
+    if (!Archive_has(archive, s_key2)) {
+        printf("Failed on has(s_key2) (not found)\n");
+        return E_NOT_FOUND;
+    }
+    
+    // get static key
+    if (E_SUCCESS != (error = _read_key(archive, s_key1))) {
+        printf("Failed to load `s_key1`\n");
+        return error;
+    }
+    if (E_SUCCESS != (error = _read_key(archive, s_key2))) {
+        printf("Failed to load `s_key2`\n");
+        return error;
+    }
+    
+    // has dynamic keys
+    for (int i = 0; i < n_items; i++) {
+        char* key = keys + (20 * i);
+        if (!Archive_has(archive, key)) {
+            printf("Failed on has() dynamic key (not found), i = %d\n", i);
+            return E_NOT_FOUND;
+        }
+    }
+    
+    // get dynamic keys
+    for (int i = 0; i < n_items; i++) {
+        char* key = keys + (20 * i);
+        error = Archive_get(archive, key, &data, &data_size);
+        if (error != E_SUCCESS) {
+            printf("Failed to get dynamic key, i = %d, error = %d\n", i, error);
+            return error;
+        }
+        free(data);
+    }
+    
+    return E_SUCCESS;
+}
+
 Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t n_items)
 {
     Errors error;
@@ -91,6 +156,14 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
         return error;
     }
     
+    // check archive (before save)
+    error = _check_archive(&archive, *_keys, n_items);
+    if (error != E_SUCCESS) {
+        printf("Failed while checking archive after building, error = %d\n", error);
+        Archive_free(&archive);
+        return error;
+    }
+    
     // save the archive
     size_t n_files;
     char** filenames;
@@ -107,25 +180,17 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
     *_filenames = new_filenames;
     *_n_files = n_files;
     
+    // check archive (after save)
+    error = _check_archive(&archive, *_keys, n_items);
+    if (error != E_SUCCESS) {
+        printf("Failed while checking archive after saving, error = %d\n", error);
+        Archive_free(&archive);
+        return error;
+    }
+    
     // destroy the archive
     Archive_free(&archive);
     
-    return E_SUCCESS;
-}
-
-Errors _read_key(Archive* archive, const char* key)
-{
-    Errors error;
-    char* data;
-    size_t data_size;
-    
-    error = Archive_get(archive, key, &data, &data_size);
-    if (error != E_SUCCESS) {
-        return error;
-    }
-    printf("Length = %lu, Data = %.*s\n", data_size, (int)data_size, data);
-    free(data);
-
     return E_SUCCESS;
 }
 
@@ -133,8 +198,6 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
 {
     Errors error;
     Archive archive;
-    char* data;
-    size_t data_size;
 
     // init archive
     printf("Init archive\n");
@@ -152,30 +215,12 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
         }
     }
     
-    // check static key has
-    printf("Has `s_key1` = %d\n", Archive_has(&archive, s_key1));
-    printf("Has `s_key2` = %d\n", Archive_has(&archive, s_key2));
-
-    // check static key get
-    if (E_SUCCESS != (error = _read_key(&archive, s_key1))) {
-        printf("Failed to load `s_key1`\n");
+    // check archive
+    error = _check_archive(&archive, keys, n_items);
+    if (error != E_SUCCESS) {
+        printf("Failed while checking archive after loading from file, error = %d\n", error);
+        Archive_free(&archive);
         return error;
-    }
-    if (E_SUCCESS != (error = _read_key(&archive, s_key2))) {
-        printf("Failed to load `s_key2`\n");
-        return error;
-    }
-    
-    // check dynamic keys
-    for (int i = 0; i < n_items; i++) {
-        char* key = keys + (20 * i);
-        error = Archive_get(&archive, key, &data, &data_size);
-        if (error != E_SUCCESS) {
-            printf("Failed to load dynamic key, i = %d, error = %d\n", i, error);
-            Archive_free(&archive);
-            return error;
-        }
-        free(data);
     }
     
     // free archive
