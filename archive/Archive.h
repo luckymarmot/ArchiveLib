@@ -17,22 +17,16 @@
 #include "HashIndex.h"
 
 
-typedef struct ArchiveListItem
-{
-    ArchivePage*                page;
-    struct ArchiveListItem*     next;
-} ArchiveListItem;
-
-
 /**
  * Archive object latest pages on the end of the list
  *
  */
 typedef struct Archive
 {
-    size_t                      n_pages;
     char*                       base_file_path;
-    ArchiveListItem*            page_stack;
+    ArchivePage*                pages;
+    size_t                      n_pages;
+    size_t                      capacity;
 } Archive;
 
 
