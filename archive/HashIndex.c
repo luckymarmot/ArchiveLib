@@ -185,9 +185,6 @@ bool      HashIndex_has(HashIndex*                    self,
                         const char*                   key)
 {
     HashPage* page = _HashIndex_get_page(self, key);
-    if (page == NULL) {
-        return false;
-    }
     return _HashPage_has(page, key);
 }
 
@@ -196,9 +193,6 @@ const HashItem* HashIndex_get(HashIndex*              self,
                               const char*             key)
 {
     HashPage* page = _HashIndex_get_page(self, key);
-    if (page == NULL) {
-        return NULL;
-    }
     return _HashPage_get(page, key);
 }
 
