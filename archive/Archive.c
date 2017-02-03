@@ -15,9 +15,9 @@ void        Archive_init(Archive*                 self,
 
 void        Archive_free(Archive*                 self)
 {
+    // free all pages
     ArchiveListItem* next = self->page_stack;
     ArchiveListItem* last = NULL;
-
     while (next != NULL) {
         ArchivePage_free(next->page);
         free(next->page);
@@ -26,8 +26,10 @@ void        Archive_free(Archive*                 self)
         free(last);
     }
     
+    // free file path string
     free(self->base_file_path);
     
+    // set null pointers
     self->n_pages = 0;
     self->base_file_path = NULL;
     self->page_stack = NULL;
