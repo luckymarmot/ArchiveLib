@@ -32,7 +32,9 @@ static void test_ArchivePage_init(void **state) {
             "missing-file-name",
             false
     );
+    assert_int_equal(error, -1);
     assert_int_equal(error, 0);
+
 
 }
 
