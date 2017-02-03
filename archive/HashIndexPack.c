@@ -93,13 +93,13 @@ void      HashIndex_unpack(HashIndex*           self,
         // this is part of a packed struct so memory is managed outside
         // Could do a spead up hear loop until there is a change of page and
         // then mass copy all at once to the old page.
-        current_item++;
         item_chr = current_item->key[0];
         if (current_page_chr != item_chr) {
             current_page = HashIndex_get_or_create_page(self, current_item->key);
             current_page_chr = item_chr;
         }
         HashPage_set_packed(current_page, current_item);
+        current_item++;
     }
     self->n_items = i;
 }
