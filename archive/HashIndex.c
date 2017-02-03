@@ -1,7 +1,3 @@
-//
-// Created by Matthaus Woolard on 27/01/2017.
-//
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,99 +5,71 @@
 
 #include "HashIndex.h"
 
+unsigned short HASH_PAGE_INITIAL_CAPACITY = 10;
+
+
+#pragma mark - HashItem
 
 /**
- * Init A HashItem
- *
- * @param self the hash item...
- * @param key the items key (20)bytes of md5
- * @param data_offset the possition in the data archive
- * @param data_size the lenght of the data pointed to
+ Initializes a HashItem for a given key.
+
+ @param self The HashItem.
+ @param key The key (20 bytes).
+ @param size Data size of the item in the data.
+ @param offset Data offset of the item in the data.
  */
-void            HashItem_init_with_key(HashItem*        self,
-                                       char*            key,
-                                       size_t           data_offset,
-                                       size_t           data_size)
+static inline void  HashItem_init_with_key(HashItem*        self,
+                                           const char*      key,
+                                           size_t           offset,
+                                           size_t           size)
 {
-    memcpy(self->key, key, sizeof(char) * 20);
-    self->data_offset = data_offset;
-    self->data_size = data_size;
+    memcpy(self->key, key, 20);
+    self->data_offset = offset;
+    self->data_size = size;
 }
 
 
+#pragma mark - HashPage
 
-void HashPage_free(HashPage* page) {
+
+/**
+ Initializes a new hash page.
+
+ @param self The hash page to be initialized.
+ */
+static inline void  HashPage_init(HashPage*         self)
+{
+    self->items = (HashItem*)malloc(sizeof(HashItem) *
+                                    HASH_PAGE_INITIAL_CAPACITY);
+    self->capacity = HASH_PAGE_INITIAL_CAPACITY;
+    self->n_items = 0;
+}
+
+
+/**
+ Frees the hash page. This won't free the page structure itself.
+
+ @param page The hash page to free.
+ */
+static inline void  HashPage_free(HashPage*         page)
+{
     free(page->items);
-    free(page);
-}
-
-void HashIndex_free(HashIndex* self) {
-    HashPage* page;
-    for (int j = 0; j < 255; ++j) {
-        page = self->pages[j];
-        if (page != NULL) {
-            HashPage_free(page);
-        }
-    }
-    //free(&self->pages);
-    free(self);
-    // Free
 }
 
 
 /**
- * Init DataBlob (do not set the data)
- *
- * @param key
- * @param data_size
- * @return DataBlob*
+ Retrieves an item from the hash page.
+
+ @param self The hash page.
+ @param key The key to retrieve.
+ @return The hash item. It's not a copy, the item is still in the page.
  */
-void DataBlob_init(DataBlob *self, char key[20], size_t data_size) {
-    self->data_size = data_size;
-    self->key = key;
-    self->data = (char *) (malloc(sizeof(char)*data_size));
-}
-
-
-/**
- * Init a hash item given a data blob and offset.
- *
- * @param self
- * @param blob
- * @param data_offset
- */
-void HashItem__init_from_data_blob__(HashItem* self, DataBlob* blob, size_t data_offset) {
-    HashItem_init_with_key(self, blob->key, data_offset, blob->data_size);
-}
-
-
-unsigned short HASH_PAGE_ALLOCATION = 10;
-
-/**
- * Init Hash Page
- *
- * @param allocated the number of items to prealocate
- * @return the new hash page.
- */
-void HashPage_init(HashPage* self, unsigned short allocated) {
-    self->items = (HashItem*) malloc(sizeof(HashItem) * allocated);
-    self->allocated = allocated;
-    self->length = 0;
-}
-
-
-/**
- * Get a Hash Item from a page
- *
- * @param self The hash page
- * @param key the key to get from
- * @return the new hash item or NULL if not found
- */
-HashItem* HashPage_get(HashPage* self, char key[20]) {
+static inline const HashItem* HashPage_get(HashPage*    self,
+                                           const char*  key)
+{
     HashItem *item;
-    int i;
-    for (i = 0; i < self->length; i = i + 1) {
-        item = &self->items[i];
+    for (int i = 0; i < self->n_items; ++i) {
+        item = self->items + i;
         if (memcmp(item->key, key, 20) == 0) {
             return item;
         }
@@ -111,189 +79,134 @@ HashItem* HashPage_get(HashPage* self, char key[20]) {
 
 
 /**
- *
- * Check if there is an entry in the page for this given key.
- *
- * @param self
- * @param key
- * @return True if found False otherwise
+ Checks whether an entry is in the page for the given key.
+
+ @param self The hash page.
+ @param key The item key.
+ @return A boolean representing whether the key is in the hash page.
  */
-bool HashPage_has(HashPage* self, char key[20]) {
+static inline bool      HashPage_has(HashPage*          self,
+                                     const char*        key)
+{
     return NULL != HashPage_get(self, key);
 }
 
 
+/**
+ Adds a HashItem to the page.
+
+ @param self The hash page.
+ @param key The key to insert (a 20 bytes binary string).
+ @param size Data size in the file.
+ @param offset Data offset in the file.
+ */
+static inline void        HashPage_set(HashPage*        self,
+                                       const char*      key,
+                                       size_t           offset,
+                                       size_t           size)
+{
+    // if needed, increase the capacity
+    if (self->n_items >= self->capacity) {
+        size_t new_capacity = self->capacity * 2;
+        if (new_capacity <= HASH_PAGE_INITIAL_CAPACITY) {
+            new_capacity = HASH_PAGE_INITIAL_CAPACITY;
+        }
+        self->items = realloc(self->items, sizeof(HashItem) * new_capacity);
+        self->capacity = new_capacity;
+    }
+
+    // set the hash item
+    HashItem_init_with_key(self->items + self->n_items, key, offset, size);
+
+    // increase the number of items
+    self->n_items += 1;
+}
+
+
+#pragma mark - HashIndex (Private)
+
 
 /**
- * Update the page
- *
- * @param self
- * @param new_item new item to push into the page.
- * @return True if updated False Otherwise
+ Gets a page from the index given a key.
+
+ @param self The hash index.
+ @param key The key to retrieve.
+ @return The page found.
  */
-bool HashPage_update(HashPage* self, HashItem* new_item) {
-    int i = 0;
-    HashItem *item;
-    for (i = 0; i < self->length; i = i + 1) {
-        item = &self->items[i];
-        if (memcmp(item->key, new_item->key, 20) == 0) {
-            item->data_size = new_item->data_size;
-            item->data_offset = new_item->data_offset;
-            return true;
+static inline HashPage*     HashIndex_get_page(HashIndex*       self,
+                                               const char*      key)
+{
+    unsigned char lookup_chr = key[0];
+    return self->pages[lookup_chr];
+}
+
+
+#pragma mark - HashIndex
+
+
+void            HashIndex_init(HashIndex*               self)
+{
+    self->n_items = 0;
+    memset(self->pages, 0, sizeof(HashPage*[256]));
+}
+
+
+void            HashIndex_free(HashIndex*               self)
+{
+    HashPage* page;
+    for (int j = 0; j < 255; ++j) {
+        page = self->pages[j];
+        if (page != NULL) {
+            HashPage_free(page);
+            free(page);
         }
     }
-    return false;
 }
 
 
-/**
- * Set a HashItem into this page
- *
- * Will update a record if already pressent
- *
- * This copies in the data from item so you can modifiy item afterwards.
- *
- * @param self
- * @param item new HashItem
- * @return the update page (the pointer might change due to realock)
- */
-void HashPage_set(HashPage* self, HashItem* item) {
-    if (self->length + 1 >= self->allocated) {
-        // We need to expand the object
-        self->items = realloc(self->items, (sizeof(HashItem) * self->allocated * 2));
-        self->allocated = (unsigned short) (self->allocated * 2);
+HashPage*       HashIndex_get_or_create_page(HashIndex*     self,
+                                             const char*    key)
+{
+    unsigned char lookup_chr = key[0];
+    HashPage* page = self->pages[lookup_chr];
+    if (page == NULL) {
+        page = (HashPage*)malloc(sizeof(HashPage));
+        HashPage_init(page);
+        self->pages[lookup_chr] = page;
     }
-
-    memcpy(&(self->items[self->length]), item, sizeof(HashItem));
-
-    self->length += 1;
-}
-
-
-static inline void PackedHashItem_unpack(PackedHashItem* self, HashItem* target) {
-    memcpy(target->key, self->key, sizeof(char[20]));
-    target->data_offset = self->data_offset;
-    target->data_size =  self->data_size;
-}
-
-
-void HashPage_set_packed(HashPage* self, PackedHashItem* item) {
-    if (self->length + 1 >= self->allocated) {
-        // We need to expand the object
-        self->items = realloc(self->items, (sizeof(HashItem) * self->allocated * 2));
-        self->allocated = (unsigned short) (self->allocated * 2);
-    }
-
-    PackedHashItem_unpack(item, &(self->items[self->length]));
-    self->length += 1;
-}
-
-
-
-
-/**
- * Create a Hash Index (empty)
- *
- *
- * All pointers to pages are set to NULL!
- * @return the new hash index
- */
-void HashIndex_init(HashIndex* self) {
-    self->n_items = 0;
-    memset(self->pages, 0, sizeof(HashIndex *[256]));
-}
-
-
-/**
- * Get a page from the index given a key
- *
- *
- *
- * @param self
- * @param key
- * @return Return NULL if not page found
- */
-HashPage* HashIndex_get_page(HashIndex* self, char key[20]) {
-    return self->pages[key[0]];
-}
-
-
-/**
- * Get or Create a Page, like get__page this will return a page if found
- * But it will also create a new page if needed, and save that page to the
- *
- * @param self
- * @param key
- * @return
- */
-HashPage* HashIndex_get_or_create_page(HashIndex* self, char key[20]) {
-    HashPage* page = self->pages[key[0]];
-    if (page) {
-        return page;
-    }
-    page = (HashPage*) (malloc(sizeof(HashPage)));
-    HashPage_init(page, HASH_PAGE_ALLOCATION);
-    self->pages[key[0]] = page;
     return page;
 }
 
 
-/**
- *
- * Get a hash item
- *
- * @param self
- * @param key
- * @return return NULL if not found
- */
-HashItem* HashIndex_get_index_item(HashIndex* self, char key[20]) {
+bool            HashIndex_has(HashIndex*                    self,
+                              const char*                   key)
+{
     HashPage* page = HashIndex_get_page(self, key);
-    if (page) {
-        return HashPage_get(page, key);
+    if (page == NULL) {
+        return false;
     }
-    return NULL;
+    return HashPage_has(page, key);
 }
 
 
-/**
- *
- * Check if an object is in this index
- *
- * This method is called a lot when inserting values
- *
- * @param self
- * @param key
- * @return True if the object is here
- */
-bool HashIndex_has(HashIndex* self, char* key) {
-    HashPage* page = HashIndex_get_page(self, key);
-    if (page) {
-        return HashPage_has(page, key);
-    }
-    return false;
-}
-
-
-
-/**
- *
- * Set an index entry to the index.
- *
- * @param self
- * @param item
- * @return the hash index, the pointer will not be changed.
- */
-Errors HashIndex_set(HashIndex* self, HashItem* item) {
+Errors          HashIndex_set(HashIndex*                    self,
+                              const char*                   key,
+                              size_t                        offset,
+                              size_t                        size)
+{
     if (self->n_items >= MAX_ITEMS_PER_INDEX) {
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
-    HashPage* page = HashIndex_get_or_create_page(self, item->key);
-    HashPage_set(page, item);
+    HashPage* page = HashIndex_get_or_create_page(self, key);
+    HashPage_set(page, key, offset, size);
     self->n_items += 1;
     return E_SUCCESS;
 }
 
-HashItem* HashIndex_get(HashIndex* self, char* key) {
+
+const HashItem* HashIndex_get(HashIndex*                    self,
+                              const char*                   key)
+{
     HashPage* page = HashIndex_get_page(self, key);
     if (page == NULL) {
         return NULL;

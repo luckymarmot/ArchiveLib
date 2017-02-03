@@ -11,6 +11,7 @@
 		AE42F21D1E4370B8004463C5 /* ArchivePage.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2161E4370B8004463C5 /* ArchivePage.c */; };
 		AE42F21E1E4370B8004463C5 /* HashIndex.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F2191E4370B8004463C5 /* HashIndex.c */; };
 		AE42F21F1E4370B8004463C5 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = AE42F21B1E4370B8004463C5 /* main.c */; };
+		AE5E49FD1E43A9C1002D2851 /* HashIndexPack.c in Sources */ = {isa = PBXBuildFile; fileRef = AE5E49FB1E43A9C1002D2851 /* HashIndexPack.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -35,6 +36,9 @@
 		AE42F2191E4370B8004463C5 /* HashIndex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = HashIndex.c; path = archive/HashIndex.c; sourceTree = SOURCE_ROOT; };
 		AE42F21A1E4370B8004463C5 /* HashIndex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HashIndex.h; path = archive/HashIndex.h; sourceTree = SOURCE_ROOT; };
 		AE42F21B1E4370B8004463C5 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = archive/main.c; sourceTree = SOURCE_ROOT; };
+		AE5E49FB1E43A9C1002D2851 /* HashIndexPack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = HashIndexPack.c; path = archive/HashIndexPack.c; sourceTree = SOURCE_ROOT; };
+		AE5E49FC1E43A9C1002D2851 /* HashIndexPack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HashIndexPack.h; path = archive/HashIndexPack.h; sourceTree = SOURCE_ROOT; };
+		AE5E49FE1E43B6F9002D2851 /* Endian.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Endian.h; path = archive/Endian.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,9 +84,12 @@
 				AE42F2151E4370B8004463C5 /* Archive.h */,
 				AE42F2161E4370B8004463C5 /* ArchivePage.c */,
 				AE42F2171E4370B8004463C5 /* ArchivePage.h */,
-				AE42F2181E4370B8004463C5 /* Errors.h */,
 				AE42F2191E4370B8004463C5 /* HashIndex.c */,
 				AE42F21A1E4370B8004463C5 /* HashIndex.h */,
+				AE5E49FB1E43A9C1002D2851 /* HashIndexPack.c */,
+				AE5E49FC1E43A9C1002D2851 /* HashIndexPack.h */,
+				AE42F2181E4370B8004463C5 /* Errors.h */,
+				AE5E49FE1E43B6F9002D2851 /* Endian.h */,
 			);
 			name = ArchiveLib;
 			sourceTree = "<group>";
@@ -145,6 +152,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE42F21F1E4370B8004463C5 /* main.c in Sources */,
+				AE5E49FD1E43A9C1002D2851 /* HashIndexPack.c in Sources */,
 				AE42F21E1E4370B8004463C5 /* HashIndex.c in Sources */,
 				AE42F21C1E4370B8004463C5 /* Archive.c in Sources */,
 				AE42F21D1E4370B8004463C5 /* ArchivePage.c in Sources */,

@@ -3,19 +3,13 @@
 
 #include "Errors.h"
 
-
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#error "Compile with Little Endian"
-#endif
-
-
-static const size_t MAX_ITEMS_PER_INDEX = 2000;
+#define _MAX_ITEMS_PER_INDEX 2000
+static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 
 
 /**
- *
  * A HashItem that maps a key (20 bytes)
- * to a pointer in the data part of your archvie
+ * to a pointer in the data part of the file system archive.
  */
 typedef struct HashItem
 {
@@ -25,44 +19,20 @@ typedef struct HashItem
 } HashItem;
 
 
-typedef struct __attribute__((__packed__)) PackedHashItem
-{
-    char                    key[20];
-    __uint32_t              data_offset;
-    __uint32_t              data_size;
-} PackedHashItem;
-
-
-/**
- * Data Blob
- *
- * Data object used for reading and writing
- * to the archive.
- */
-typedef struct DataBlob
-{
-    size_t                  data_size;
-    char*                   key;
-    char*                   data;
-} DataBlob;
-
-
 /**
  * Page of the Hash Map
  * there is 1 page for each of the first chars.
  */
 typedef struct HashPage
 {
-    unsigned short          allocated;
-    unsigned short          length;
+    size_t                  capacity;
+    size_t                  n_items;
     HashItem*               items;
 } HashPage;
 
 
 /**
- *
  * Hash Index keeps a collection of pages mapped by the first char of the key.
- *
  */
 typedef struct HashIndex
 {
@@ -73,37 +43,68 @@ typedef struct HashIndex
 
 #pragma mark HashIndex
 
-void            HashIndex_init(HashIndex*               self);
+/**
+ Initializes a new empty index.
 
-void            HashIndex_free(HashIndex*               self);
-
-HashPage*       HashIndex_get_or_create_page(HashIndex* self,
-                                             char       key[20]);
-
-bool            HashIndex_has(HashIndex*                self,
-                              char*                     key);
-
-HashItem*       HashIndex_get(HashIndex*                self,
-                              char*                     key);
-
-Errors          HashIndex_set(HashIndex*                self,
-                              HashItem*                 item);
+ @param self The index.
+ */
+void            HashIndex_init(HashIndex*                 self);
 
 
-#pragma mark HashPage
+/**
+ Frees the index.
 
-void            HashPage_set(HashPage*                  self,
-                             HashItem*                  item);
-
-void            HashPage_set_packed(HashPage*           self,
-                                    PackedHashItem*     item);
+ @param self The index to free.
+ */
+void            HashIndex_free(HashIndex*                 self);
 
 
-#pragma mark HashItem
+/**
+ Gets an existing page for the key, or create a new one.
 
-void            HashItem_init_with_key(HashItem*        self,
-                                       char*            key,
-                                       size_t           data_offset,
-                                       size_t           data_size);
+ @param self The index.
+ @param key The key for the page.
+ @return The page.
+ */
+HashPage*       HashIndex_get_or_create_page(HashIndex*   self,
+                                             const char*  key);
+
+
+/**
+ Checks if an object if in the index.
+
+ @param self The index.
+ @param key The key to lookup (a 20 bytes binary string).
+ @return A boolearn representing whether the key has been found.
+ */
+bool            HashIndex_has(HashIndex*                  self,
+                              const char*                 key);
+
+
+/**
+ Retrieves an hash item from the index by its key.
+
+ @param self The index.
+ @param key The key to lookup (a 20 bytes binary string).
+ @return The hash item.
+ */
+const HashItem* HashIndex_get(HashIndex*                  self,
+                              const char*                 key);
+
+
+/**
+ Sets an item in the index.
+
+ @param self The index.
+ @param key The key to insert (a 20 bytes binary string).
+ @param size Data size in the file.
+ @param offset Data offset in the file.
+ @return An error code.
+ */
+Errors          HashIndex_set(HashIndex*                  self,
+                              const char*                   key,
+                              size_t                        offset,
+                              size_t                        size);
+
 
 #endif //ARCHIVELIB_HASHINDEX_H

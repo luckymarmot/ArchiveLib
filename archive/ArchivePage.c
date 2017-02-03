@@ -7,16 +7,41 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "Endian.h"
 #include "ArchivePage.h"
+#include "HashIndexPack.h"
+
+/**
+ * A private packed structure for writing archive's file header to file.
+ */
+typedef struct __attribute__((__packed__)) ArchiveFileHeader
+{
+    __uint32_t              version;
+    __uint32_t              capacity;
+    __uint32_t              n_items;
+    __uint32_t              index_start;
+    __uint32_t              data_start;
+    __uint32_t              data_size;
+} ArchiveFileHeader;
+
+
+typedef enum ArchiveFileVersion {
+    ArchiveFileVersion1 = 1,
+} ArchiveFileVersion;
+
+
+static size_t ArchivePage_index_start = sizeof(ArchiveFileHeader);
+static size_t ArchivePage_data_start = sizeof(ArchiveFileHeader) + (_MAX_ITEMS_PER_INDEX * sizeof(PackedHashItem));
+static size_t ArchivePage_capacity = _MAX_ITEMS_PER_INDEX;
 
 
 #pragma mark Read / Write
 
 
-static Errors       write_to_file(file_descriptor   fd,
-                                  const void*       buffer,
-                                  size_t            size,
-                                  off_t             offset)
+static inline Errors    write_to_file(file_descriptor   fd,
+                                      const void*       buffer,
+                                      size_t            size,
+                                      off_t             offset)
 {
     off_t writen = 0;
     ssize_t r;
@@ -31,10 +56,10 @@ static Errors       write_to_file(file_descriptor   fd,
 }
 
 
-static Errors       read_from_file(file_descriptor  fd,
-                                   void*            buffer,
-                                   size_t           size,
-                                   off_t            offset)
+static inline Errors    read_from_file(file_descriptor  fd,
+                                       void*            buffer,
+                                       size_t           size,
+                                       off_t            offset)
 {
     off_t read = 0;
     ssize_t r;
@@ -49,214 +74,103 @@ static Errors       read_from_file(file_descriptor  fd,
 }
 
 
-#pragma mark PackedIndex
+#pragma mark ArchivePage Header Deserialization
 
 
 /**
- * Archive File Header
- *
- * Header saved at the top of each file.
- * This helps with unpacking the file.
+ Reads the archive file's index data.
+
+ @param self The archive page.
+ @param n_items The number of items in the index.
+ @return An error code.
  */
-typedef struct __attribute__((__packed__)){
-    size_t capacity;
-    size_t saved_items;
-    PackedHashItem items[];
-} PackedIndex;
-
-/**
- *
- *
- * Do not copy in any data yet
- *
- */
-
-
-/**
- Initializes a PackedIndex structure.
-
- @param capacity Number of items the structure can hold.
- @return A newly allocated structure. The caller should call PackedIndex_free()
-         to deallocate the structure after use.
- */
-static inline PackedIndex* PackedIndex_init(size_t      capacity)
+static inline Errors    ArchivePage_read_file_index(ArchivePage*        self,
+                                                    size_t              n_items)
 {
-    // allocate the memory needed
-    PackedIndex* p_index = (PackedIndex*)malloc(
-		sizeof(PackedIndex) + sizeof(PackedHashItem) * capacity
+    // read packed hash items
+    size_t p_items_size = sizeof(PackedHashItem) * n_items;
+    PackedHashItem* p_items = (PackedHashItem*)malloc(p_items_size);
+    Errors error = read_from_file(
+        self->fd,
+        p_items,
+        p_items_size,
+        ArchivePage_index_start
     );
-    p_index->saved_items = 0;
-    p_index->capacity = capacity;
-    return p_index;
-}
-
-
-/**
- Frees the PackedIndex structure.
-
- @param self The PackedIndex.
- */
-static inline void      PackedIndex_free(PackedIndex*   self)
-{
-    free(self);
-}
-
-
-static inline void      HashItem_pack(HashItem*         self,
-                                      PackedHashItem*   target)
-{
-    memcpy(target->key, self->key, sizeof(char[20]));
-    target->data_offset = (__uint32_t) self->data_offset;
-    target->data_size = (__uint32_t) self->data_size;
-}
-
-
-/**
- *
- * Dump a HashIndex to  packed index
- *
- * @param self the hash index to dump
- * @param packed_index the target
- * @return Error? if it returns E_INDEX_OUT_OF_BOUNDS then the packed index is the wrong dimention
- */
-static inline Errors    HashIndex_pack(HashIndex*       self,
-                                       PackedIndex*     packed_index)
-{
-    if (self->n_items > packed_index->capacity) {
-        return E_INDEX_OUT_OF_BOUNDS;
+    if (error != E_SUCCESS) {
+        free(p_items);
+        return error;
     }
-    size_t items_saved = 0;
-    int i = 0;
-    HashPage* page;
-    for( i = 0; i < 256; i = i + 1 ){
-        page = self->pages[i];
-        if (page != NULL) {
-            if (items_saved + page->length > packed_index->capacity) {
-                // Update this number before error
-                packed_index->saved_items = items_saved;
-                return E_INDEX_OUT_OF_BOUNDS;
-            }
-            for (int k = 0; k < page->length; ++k) {
-                HashItem_pack(&page->items[k], &packed_index->items[items_saved + k]);
-            }
-            items_saved += page->length;
-        }
-    }
-    if (items_saved > packed_index->capacity) {
-        return E_INDEX_OUT_OF_BOUNDS;
-    }
-    packed_index->saved_items = items_saved;
+    
+    // load packed items to the index
+    HashIndex_unpack(self->index, p_items, n_items);
+    
+    free(p_items);
+    
     return E_SUCCESS;
 }
 
 
 /**
- * Unpack a Packed Index into a hash index.
- *
- * @param self
- * @param index
+ Reads the archive file's header and index data.
+
+ @param self The archive page.
+ @return An error code.
  */
-static inline void      PackedIndex_unpack(PackedIndex* self,
-                                           HashIndex*   index)
+static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
 {
-    // Packed indexes are saved in a sequence so a while loop
-    // is best here to reduce lookups;
-    size_t current_item_index = 0;
-    PackedHashItem* current_item;
-    HashPage* current_page;
-    char current_page_char;
-    if (self->saved_items > 0) {
-        current_item = &self->items[current_item_index];
-        current_page_char = current_item->key[0];
-        current_page = HashIndex_get_or_create_page(index, current_item->key);
-    } else {
-        return;
+    Errors error;
+    
+    // read ArchiveFileHeader from file
+    ArchiveFileHeader file_header;
+    error = read_from_file(self->fd, &file_header, sizeof(ArchiveFileHeader), 0);
+    if (error != E_SUCCESS) {
+        return error;
     }
-    while (current_item_index < self->saved_items) {
-        // this is part of a packed struct so memory is managed outside
-        // Could do a spead up hear loop until there is a change of page and
-        // then mass copy all at once to the old page.
-        current_item = &self->items[current_item_index];
-        if (current_page_char != current_item->key[0]) {
-            current_page = HashIndex_get_or_create_page(index, current_item->key);
-            current_page_char = current_item->key[0];
-        }
-        HashPage_set_packed(current_page, current_item);
-        current_item_index += 1;
+    
+    // check data consistency
+    if (be32toh(file_header.version) != ArchiveFileVersion1) {
+        return E_UNKNOWN_ARCHIVE_VERSION;
     }
-    index->n_items = current_item_index;
+
+    // enforce the right endianness
+    size_t capacity     = be32toh(file_header.capacity);
+    size_t n_items      = be32toh(file_header.n_items);
+    size_t index_start  = be32toh(file_header.index_start);
+    size_t data_start   = be32toh(file_header.data_start);
+    size_t data_size    = be32toh(file_header.data_size);
+
+    // check data consistency
+    if (index_start != ArchivePage_index_start ||
+        data_start != ArchivePage_data_start ||
+        capacity != ArchivePage_capacity ||
+        n_items > capacity) {
+        return E_INVALID_ARCHIVE_HEADER;
+    }
+    
+    // populate the ArchivePage fields
+    self->data_size = data_size;
+    
+    // read index
+    error = ArchivePage_read_file_index(self, n_items);
+
+    return error;
 }
 
 
-static inline Errors    PackedIndex_write_to_disk(PackedIndex*  self,
-                                                  ArchivePage*  archive)
+#pragma mark ArchivePage Header Serialization
+
+
+static inline void      ArchivePage_dump_file_header(const ArchivePage* self,
+                                                     void*              buf)
 {
-    ArchiveFileHeader* header = archive->file_header;
-    size_t size = (self->capacity * sizeof(PackedHashItem)) + sizeof(PackedIndex);
-    if ( size > header->header_size) {
-        return E_INDEX_MAX_SIZE_EXCEEDED;
-    }
-    return write_to_file(archive->fd, self, size, (off_t) header->header_start);
-}
-
-
-static inline Errors    PackedIndex_read_size(PackedIndex*      self,
-                                              ArchivePage*      archive)
-{
-    ArchiveFileHeader* header = archive->file_header;
-    // Read in 2 parts just read the first git of the data first
-    return read_from_file(
-            archive->fd,
-            self,
-            sizeof(PackedIndex),
-            (off_t) header->header_start
-    );
-}
-
-
-static inline Errors    PackedIndex_read_from_disk(PackedIndex* self,
-                                                   ArchivePage* archive)
-{
-    ArchiveFileHeader* header = archive->file_header;
-    size_t size = (self->capacity * sizeof(PackedHashItem)) + sizeof(PackedIndex);
-    if ( size > header->header_size) {
-        return E_INDEX_MAX_SIZE_EXCEEDED;
-    }
-    return read_from_file(
-            archive->fd,
-            self,
-            size,
-            (off_t) header->header_start
-    );
-}
-
-
-#pragma mark ArchivePage
-
-
-/**
- *
- * Open a file descriptor for an archive.
- *
- * @param self The archive page to open.
- * @param filename Filename of the archive file.
- * @return An error code.
- */
-static inline Errors    ArchivePage_open_file(ArchivePage*      self,
-                                              char*             filename)
-{
-    // open a (new) file for read and write with use ownership.
-    file_descriptor fd = open(filename , O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-    if (fd < 0) {
-        return E_SYSTEM_ERROR_ERRNO;
-    }
-    self->fd = fd;
-    // get a lock and dont wait for it
-    int lock = flock(self->fd, LOCK_SH | LOCK_NB);
-    if (lock < 0) {
-        return E_SYSTEM_ERROR_ERRNO;
-    }
-    return E_SUCCESS;
+    ArchiveFileHeader file_header;
+    file_header.version     = htobe32(ArchiveFileVersion1);
+    file_header.capacity    = htobe32((__uint32_t)ArchivePage_capacity);
+    file_header.n_items     = htobe32((__uint32_t)self->index->n_items);
+    file_header.index_start = htobe32((__uint32_t)ArchivePage_index_start);
+    file_header.data_start  = htobe32((__uint32_t)ArchivePage_data_start);
+    file_header.data_size   = htobe32((__uint32_t)self->data_size);
+    memcpy(buf, &file_header, sizeof(ArchiveFileHeader));
 }
 
 
@@ -264,140 +178,89 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self,
  Write the file header to the archive's file descriptor.
 
  @param self The archive.
- @param file_header The file header.
  @return An error code.
  */
-static inline Errors    ArchivePage_write_file_header(ArchivePage*       self,
-                                                      ArchiveFileHeader* file_header)
-{
-    return write_to_file(self->fd, file_header, sizeof(ArchiveFileHeader), 0);
-}
-
-
-
-/**
- *
- * Read File Header
- *
- */
-static inline Errors    ArchivePage_read_file_header(ArchivePage*		self,
-                                                     ArchiveFileHeader* file_header)
-{
-    return read_from_file(self->fd, file_header, sizeof(ArchiveFileHeader), 0);
-}
-
-
-static inline Errors    ArchivePage_init_new_file_header(ArchivePage*       self,
-                                                         ArchiveFileHeader* file_header)
-{
-    file_header->data_size = 0;
-    file_header->header_size = sizeof(PackedHashItem) * MAX_ITEMS_PER_INDEX + sizeof(PackedIndex);
-    file_header->header_start = sizeof(ArchiveFileHeader);
-    file_header->data_start = file_header->header_size + file_header->header_start;
-    return ArchivePage_write_file_header(self, file_header);
-}
-
-
-Errors      ArchivePage_init(ArchivePage*           self,
-                             HashIndex*             index,
-                             char*                  filename,
-                             bool                   new_file)
-{
-    self->index = index;
-    self->filename = filename;
-    printf("Init File:%s\n", self->filename);
-    Errors error = ArchivePage_open_file(self, filename);
-    if (error != E_SUCCESS) {
-        printf("File not opened ERROR: %s\n", strerror(errno));
-        return error;
-    }
-    self->file_header = (ArchiveFileHeader*) (malloc(sizeof(ArchiveFileHeader)));
-
-    if (!new_file) {
-        error = ArchivePage_read_file_header(self, self->file_header);
-    } else {
-        error = ArchivePage_init_new_file_header(self, self->file_header);
-    }
-    if (error != E_SUCCESS ) {
-        return error;
-    }
-
-    if (new_file) {
-        HashIndex_init(index);
-        self->index = index;
-    } else {
-        // Read packed index from disk
-        // unpack to an index
-        PackedIndex* p_index = (PackedIndex*) (malloc(sizeof(PackedIndex)));
-        error = PackedIndex_read_size(p_index, self);
-        if (error != E_SUCCESS) {
-            free(p_index);
-            return error;
-        }
-        size_t capacity = p_index->capacity;
-        free(p_index);
-        p_index = (PackedIndex*) (malloc(sizeof(PackedIndex) + sizeof(PackedHashItem) * capacity));
-        p_index->capacity = capacity;
-        error = PackedIndex_read_from_disk(p_index, self);
-        if (error != E_SUCCESS) {
-            return error;
-        }
-        HashIndex_init(index);
-        PackedIndex_unpack(p_index, index);
-        free(p_index);
-        self->index = index;
-    }
-    return E_SUCCESS;
-    // Read the header...
-}
-
-
-Errors      ArchivePage_save(ArchivePage*           self)
+static inline Errors    ArchivePage_write_file_header(const ArchivePage* self)
 {
     Errors error;
     
-    // write the file header
-    error = ArchivePage_write_file_header(self, self->file_header);
+    // allocate a buffer to write the full header + index
+    // use calloc to make sure we fill up empty space with 0 in the file
+    size_t header_size = sizeof(ArchiveFileHeader) +
+                         (sizeof(PackedHashItem) * ArchivePage_capacity);
+    void* buf = calloc(header_size, 1);
+    
+    // write the header
+    ArchivePage_dump_file_header(self, buf);
+    
+    // write the index
+    size_t n_items;
+    error = HashIndex_pack(self->index, (PackedHashItem*)(buf + ArchivePage_index_start), ArchivePage_capacity, &n_items);
     if (error != E_SUCCESS) {
-        printf("ArchivePage_write_file_header %d\n", error);
+        free(buf);
         return error;
     }
-    PackedIndex* p_index = PackedIndex_init(self->index->n_items);
-    error = HashIndex_pack(self->index, p_index);
+    
+    // write to file
+    error = write_to_file(self->fd, buf, header_size, 0);
     if (error != E_SUCCESS) {
-        printf("HashIndex_pack %d\n", error);
+        free(buf);
         return error;
     }
-    error = PackedIndex_write_to_disk(p_index, self);
-    if (error != E_SUCCESS) {
-        printf("PackedIndex_write_to_disk %d\n", error);
-        return error;
-    }
-    PackedIndex_free(p_index);
+    
+    free(buf);
     return E_SUCCESS;
 }
 
 
-void        ArchivePage_free(ArchivePage*           self)
+#pragma mark ArchivePage Private Helpers
+
+
+/**
+ Open the archive's file descriptor.
+
+ @param self The archive.
+ @return An error code.
+ */
+static inline Errors    ArchivePage_open_file(ArchivePage*      self)
 {
-    HashIndex_free(self->index);
+    // open a (new) file for read and write with use ownership
+    file_descriptor fd = open(self->filename , O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    if (fd < 0) {
+        return E_SYSTEM_ERROR_ERRNO;
+    }
+
+    // get a lock and don't wait for it
+    int lock = flock(fd, LOCK_SH | LOCK_NB);
+    if (lock < 0) {
+        return E_SYSTEM_ERROR_ERRNO;
+    }
+
+    // store the file descriptor
+    self->fd = fd;
+
+    return E_SUCCESS;
+}
+
+
+/**
+ Close the archive's file descriptor.
+
+ @param self The archive.
+ */
+static inline void      ArchivePage_close_file(ArchivePage*         self)
+{
     flock(self->fd, LOCK_UN);
     close(self->fd);
-    free(self);
+    self->fd = (-1);
 }
 
 
-bool        ArchivePage_has(ArchivePage*            page,
-                            char*                   key)
+static Errors           ArchivePage_read_item(const ArchivePage*    self,
+                                              const HashItem*       item,
+                                              char**                _data,
+                                              size_t*               _data_size)
 {
-    return HashIndex_has(page->index, key);
-}
-
-
-static Errors       ArchivePage_read_item(ArchivePage*  self,
-                                          HashItem*     item,
-                                          char**        _data,
-                                          size_t*       _data_size) {
     size_t data_size = item->data_size;
     char* data = (char*)malloc(sizeof(char) * data_size);
 
@@ -406,7 +269,7 @@ static Errors       ArchivePage_read_item(ArchivePage*  self,
         self->fd,
         data,
         data_size,
-        (off_t)(self->file_header->data_start + item->data_offset)
+        (off_t)(ArchivePage_data_start + item->data_offset)
     );
 
     // if error, free data and return
@@ -423,21 +286,21 @@ static Errors       ArchivePage_read_item(ArchivePage*  self,
 }
 
 
-static Errors       ArchivePage_write_item(ArchivePage* self,
-                                           HashItem*    item,
-                                           char*        data,
-                                           size_t       size) {
+static Errors       ArchivePage_write_item(ArchivePage*     self,
+                                           const char*      data,
+                                           size_t           size,
+                                           size_t*          _data_offset)
+{
 
     // the item is positioned at the end of the files data section
-    item->data_offset = self->file_header->data_size;
-    item->data_size = size;
+    size_t offset = self->data_size;
 
     // write to file
     Errors error = write_to_file(
         self->fd,
         data,
         size,
-        (off_t)(self->file_header->data_start + item->data_offset)
+        (off_t)(ArchivePage_data_start + offset)
     );
 
     if (error != E_SUCCESS) {
@@ -445,27 +308,110 @@ static Errors       ArchivePage_write_item(ArchivePage* self,
     }
 
     // update the data size
-    self->file_header->data_size += size;
+    self->data_size += size;
+    
+    // set return pointer
+    *_data_offset = offset;
 
     return E_SUCCESS;
 }
 
 
-Errors      ArchivePage_get(ArchivePage*            self,
-                            char*                   key,
+#pragma mark ArchivePage Public Functions
+
+
+Errors      ArchivePage_init(ArchivePage*           self,
+                             const char*            filename,
+                             bool                   new_file)
+{
+    Errors error;
+
+    // copy filename to the struct
+    size_t filename_size = strlen(filename) + 1;
+    self->filename = (char*)malloc(filename_size);
+    memcpy(self->filename, filename, filename_size);
+    printf("Init File:%s\n", self->filename);
+
+    // open file descriptor
+    error = ArchivePage_open_file(self);
+    if (error != E_SUCCESS) {
+        printf("File not opened ERROR: %s\n", strerror(errno));
+        free(self->filename);
+        self->filename = NULL;
+        return error;
+    }
+    
+    // allocates and inits the index
+    self->index = (HashIndex*)malloc(sizeof(HashIndex));
+    HashIndex_init(self->index);
+
+    // loads file header and index
+    if (new_file) {
+        self->data_size = 0;
+    } else {
+        error = ArchivePage_read_file_header(self);
+        if (error != E_SUCCESS) {
+            ArchivePage_close_file(self);
+            free(self->index);
+            free(self->filename);
+            self->index = NULL;
+            self->filename = NULL;
+            return error;
+        }
+    }
+        
+    return E_SUCCESS;
+}
+
+
+void        ArchivePage_free(ArchivePage*           self)
+{
+    ArchivePage_close_file(self);
+    HashIndex_free(self->index);
+    free(self->index);
+    free(self->filename);
+    self->index = NULL;
+    self->filename = NULL;
+}
+
+
+Errors      ArchivePage_save(const ArchivePage*     self)
+{
+    Errors error;
+    
+    // write the file header
+    error = ArchivePage_write_file_header(self);
+    if (error != E_SUCCESS) {
+        printf("ArchivePage_save, error = %d\n", error);
+        return error;
+    }
+    return E_SUCCESS;
+}
+
+
+bool        ArchivePage_has(const ArchivePage*      page,
+                            const char*             key)
+{
+    return HashIndex_has(page->index, key);
+}
+
+
+Errors      ArchivePage_get(const ArchivePage*      self,
+                            const char*             key,
                             char**                  _data,
-                            size_t*                 _data_size) {
-    HashItem* item = HashIndex_get(self->index, key);
+                            size_t*                 _data_size)
+{
+    const HashItem* item = HashIndex_get(self->index, key);
     if (item == NULL) {
-        return E_SUCCESS;
+        return E_NOT_FOUND;
     }
     return ArchivePage_read_item(self, item, _data, _data_size);
 }
 
 
 Errors      ArchivePage_set(ArchivePage*            self,
-                            char*                   key,
-                            char*                   data,
+                            const char*             key,
+                            const char*             data,
                             size_t                  size)
 {
     // if the page is full, return an error
@@ -473,12 +419,11 @@ Errors      ArchivePage_set(ArchivePage*            self,
         return E_INDEX_MAX_SIZE_EXCEEDED;
     }
     
-    HashItem item;
-    HashItem_init_with_key(&item, key, 0, size);
-    Errors error = ArchivePage_write_item(self, &item, data, size);
+    size_t offset;
+    Errors error = ArchivePage_write_item(self, data, size, &offset);
     if (error != E_SUCCESS) {
         return error;
     }
-    error = HashIndex_set(self->index, &item);
+    error = HashIndex_set(self->index, key, offset, size);
     return error;
 }

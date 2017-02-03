@@ -17,19 +17,6 @@ typedef int file_descriptor;
 
 
 /**
- * A private packed structure for writing archive's file header to file.
- */
-typedef struct __attribute__((__packed__)) ArchiveFileHeader
-{
-    unsigned short          version;
-    size_t                  header_start;
-    size_t                  header_size;
-    size_t                  data_start;
-    size_t                  data_size;
-} ArchiveFileHeader;
-
-
-/**
  *
  *  ArchivePage for a given disk file
  *  Store the header, the data offset
@@ -40,32 +27,84 @@ typedef struct __attribute__((__packed__)) ArchiveFileHeader
 typedef struct ArchivePage
 {
     HashIndex*              index;
-    ArchiveFileHeader*      file_header;
+    size_t                  data_size;
     file_descriptor         fd;
     char*                   filename;
 } ArchivePage;
 
 
+/**
+ Initializes a new archive page.
+
+ @param self The archive page.
+ @param filename The filename of the archive.
+ @param new_file Whether the archive is a new file.
+ @return An error code.
+ */
 Errors      ArchivePage_init(ArchivePage*           self,
-                             HashIndex*             index,
-                             char*                  filename,
+                             const char*            filename,
                              bool                   new_file);
 
+
+/**
+ Free the inside structures of the archive page.
+
+ @param self The archive page.
+ */
 void        ArchivePage_free(ArchivePage*           self);
 
-Errors      ArchivePage_save(ArchivePage*           self);
 
-bool        ArchivePage_has(ArchivePage*            page,
-                            char*                   key);
+/**
+ Saves the archive page to the file system.
 
-Errors      ArchivePage_get(ArchivePage*            self,
-                            char*                   key,
+ @param self The archive page.
+ @return An error code.
+ */
+Errors      ArchivePage_save(const ArchivePage*     self);
+
+
+/**
+ Checks if a given key is inside the archive page.
+
+ @param page The archive page.
+ @param key The key to lookup (a 20 bytes binary string).
+ @return An error code.
+ */
+bool        ArchivePage_has(const ArchivePage*      page,
+                            const char*             key);
+
+
+/**
+ Retrieve an item from the archive page.
+
+ @param self The archive page.
+ @param key The key to lookup (a 20 bytes binary string).
+ @param _data A pointer to the char* that will be returned.
+              The returned char* should be free'ed by the caller.
+              Data is not null-terminated, may be binary. The caller should
+              rely on the `_data_size` value to know how many bytes to read.
+ @param _data_size A pointer to the size of the read data.
+ @return An error code.
+ */
+Errors      ArchivePage_get(const ArchivePage*      self,
+                            const char*             key,
                             char**                  _data,
                             size_t*                 _data_size);
 
+
+/**
+ Sets a new item to the archive page.
+
+ @param self The archive.
+ @param key The key to set for the new item (a 20 bytes binary string).
+ @param data The data to write to the archive.
+ @param size The length of the data to write.
+ @return An error code.
+ */
 Errors      ArchivePage_set(ArchivePage*            self,
-                            char*                   key,
-                            char*                   data,
+                            const char*             key,
+                            const char*             data,
                             size_t                  size);
+
 
 #endif //ARCHIVELIB_ARCHIVELAYER_H
