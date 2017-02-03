@@ -80,6 +80,8 @@ Errors _check_archive(Archive* archive, char* keys, size_t n_items)
     Errors error;
     char* data;
     size_t data_size;
+    char* key;
+    char value[256];
     
     // has static key
     if (!Archive_has(archive, s_key1)) {
@@ -112,11 +114,16 @@ Errors _check_archive(Archive* archive, char* keys, size_t n_items)
     
     // get dynamic keys
     for (int i = 0; i < n_items; i++) {
-        char* key = keys + (20 * i);
+        key = keys + (20 * i);
         error = Archive_get(archive, key, &data, &data_size);
         if (error != E_SUCCESS) {
             printf("Failed to get dynamic key, i = %d, error = %d\n", i, error);
             return error;
+        }
+        sprintf(value, "[My data, i = %ld]", (size_t)i);
+        if (memcmp(value, data, data_size) != 0) {
+            printf("Data contained in dynamic key is invalid, i = %d\n", i);
+            return E_FILE_READ_ERROR;
         }
         free(data);
     }
@@ -128,6 +135,8 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
 {
     Errors error;
     Archive archive;
+    
+    printf("== Build archive ==\n");
     
     // init archive and add a first page
     Archive_init(&archive, "./");
@@ -185,6 +194,7 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
     if (error != E_SUCCESS) {
         printf("Failed while checking archive after saving, error = %d\n", error);
         Archive_free(&archive);
+        free(new_filenames);
         return error;
     }
     
@@ -199,8 +209,9 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
     Errors error;
     Archive archive;
 
+    printf("== Read archive ==\n");
+    
     // init archive
-    printf("Init archive\n");
     Archive_init(&archive, "./");
     
     // add pages
@@ -232,13 +243,12 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
 int main()
 {
     Errors error;
-    size_t n_items = 100000;
-
-    // == Writing ==
-    
     char* filenames;
     char* keys;
     size_t n_files;
+    size_t n_items = 100000;
+
+    // == Writing ==
     error = _build_archive(&filenames, &n_files, &keys, n_items);
     if (error != E_SUCCESS) {
         printf("Failed building archive\n");

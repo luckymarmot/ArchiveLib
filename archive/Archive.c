@@ -1,68 +1,66 @@
 #include "Archive.h"
 #include <uuid/uuid.h>
 
+
 void        Archive_init(Archive*                 self,
                          const char*              base_file_path)
 {
+    size_t capacity = 10;
     self->n_pages = 0;
-    self->page_stack = NULL;
-    
+    self->capacity = capacity;
+    self->pages = (ArchivePage*)malloc(sizeof(ArchivePage) * capacity);
+
     // copy base file path
     size_t base_file_path_size = strlen(base_file_path) + 1;
     self->base_file_path = malloc(base_file_path_size);
     memcpy(self->base_file_path, base_file_path, base_file_path_size);
 }
 
+
 void        Archive_free(Archive*                 self)
 {
     // free all pages
-    ArchiveListItem* next = self->page_stack;
-    ArchiveListItem* last = NULL;
-    while (next != NULL) {
-        ArchivePage_free(next->page);
-        free(next->page);
-        last = next;
-        next = next->next;
-        free(last);
+    size_t n_pages = self->n_pages;
+    for (size_t i = 0; i < n_pages; i++) {
+        ArchivePage_free(&(self->pages[i]));
     }
+    free(self->pages);
     
     // free file path string
     free(self->base_file_path);
     
     // set null pointers
-    self->n_pages = 0;
     self->base_file_path = NULL;
-    self->page_stack = NULL;
+    self->pages = NULL;
+    self->n_pages = 0;
+    self->capacity = 0;
 }
+
 
 Errors      Archive_save(const Archive*           self,
                          char***                  _filenames,
                          size_t*                  _n_files)
 {
     Errors error;
-
     char** filenames = (char **)malloc(sizeof(char*) * self->n_pages);
-    size_t n_files = self->n_pages;
+    size_t n_pages = self->n_pages;
 
-    ArchiveListItem* next = self->page_stack;
-    int i = 0;
-    while (next != NULL) {
-        printf("In loop %d\n %p %s\n", i, next->page, next->page->filename);
-        error = ArchivePage_save(next->page);
+    // save all pages
+    for (size_t i = 0; i < n_pages; i++) {
+        ArchivePage* page = &(self->pages[i]);
+        error = ArchivePage_save(page);
         if (error != E_SUCCESS) {
             printf("Failed to save!!! %d\n", error);
             printf("File not saved ERROR: %s\n", strerror(errno));
             free(filenames);
             return error;
         }
-        filenames[i] = next->page->filename;
-        i += 1;
-        next = next->next;
+        filenames[i] = page->filename;
     }
     
     // set return pointers
     *_filenames = filenames;
-    *_n_files = n_files;
+    *_n_files = n_pages;
     
     return E_SUCCESS;
 }
@@ -76,29 +74,28 @@ static inline Errors    Archive_add_page(Archive*       self,
     char* filepath;
     asprintf(&filepath, "%s%s", self->base_file_path, filename);
     
-    // log
-    printf("Add archive page, new? = %d, filename = %s\n", new_file, filename);
+    // make sure we have enough space, or we realloc
+    if (self->n_pages >= self->capacity) {
+        size_t new_capacity = self->capacity * 2;
+        self->pages = (ArchivePage*)realloc(self->pages, sizeof(ArchivePage) * new_capacity);
+        self->capacity = new_capacity;
+    }
 
     // create the page struct
-    ArchivePage* page = (ArchivePage*)malloc(sizeof(ArchivePage));
+    ArchivePage* page = &(self->pages[self->n_pages]);
     Errors error = ArchivePage_init(page, filepath, new_file);
     if (error != E_SUCCESS) {
         free(filepath);
-        free(page);
         return error;
     }
+    
+    // increment number of pages
+    self->n_pages += 1;
     
     // free filepath
     free(filepath);
     filepath = NULL;
-
-    // add page to the list
-    ArchiveListItem* list_item = (ArchiveListItem*)malloc(sizeof(ArchiveListItem));
-    list_item->next = self->page_stack;
-    list_item->page = page;
-    self->page_stack = list_item;
-    self->n_pages += 1;
-    
+   
     return E_SUCCESS;
 }
 
@@ -125,12 +122,10 @@ Errors      Archive_add_empty_page(Archive*       self)
 bool        Archive_has(const Archive*            self,
                         const char*               key)
 {
-    ArchiveListItem* item = self->page_stack;
-    while (item != NULL) {
-        if (ArchivePage_has(item->page, key)) {
+    for (long long i = self->n_pages - 1; i >= 0; i--) {
+        if (ArchivePage_has(self->pages + i, key)) {
             return true;
         }
-        item = item->next;
     }
     return false;
 }
@@ -142,16 +137,16 @@ Errors      Archive_get(const Archive*            self,
                         size_t*                   _data_size)
 {
     Errors error;
-    ArchiveListItem* item = self->page_stack;
-    while (item != NULL) {
+    
+    for (long long i = self->n_pages - 1; i >= 0; i--) {
         // lookup in an archive
-        error = ArchivePage_get(item->page, key, _data, _data_size);
+        error = ArchivePage_get(self->pages + i, key, _data, _data_size);
         // if success or an error that isn't "not found" stop
         if (error != E_NOT_FOUND) {
             return error;
         }
-        item = item->next;
     }
+
     return E_NOT_FOUND;
 }
 
@@ -169,7 +164,7 @@ Errors      Archive_set(Archive*                  self,
     }
     
     // write to the last page
-    error = ArchivePage_set(self->page_stack->page, key, data, size);
+    error = ArchivePage_set(&(self->pages[self->n_pages - 1]), key, data, size);
     
     // if page is full, add a new page and try again
     if (error == E_INDEX_MAX_SIZE_EXCEEDED) {
@@ -177,7 +172,7 @@ Errors      Archive_set(Archive*                  self,
         if (error != E_SUCCESS) {
             return error;
         }
-        error =  ArchivePage_set(self->page_stack->page, key, data, size);
+        error =  ArchivePage_set(&(self->pages[self->n_pages - 1]), key, data, size);
     }
 
     return error;

@@ -330,12 +330,11 @@ Errors      ArchivePage_init(ArchivePage*           self,
     size_t filename_size = strlen(filename) + 1;
     self->filename = (char*)malloc(filename_size);
     memcpy(self->filename, filename, filename_size);
-    printf("Init File:%s\n", self->filename);
 
     // open file descriptor
     error = ArchivePage_open_file(self);
     if (error != E_SUCCESS) {
-        printf("File not opened ERROR: %s\n", strerror(errno));
+        printf("File not opened, error = %s\n", strerror(errno));
         free(self->filename);
         self->filename = NULL;
         return error;
@@ -382,7 +381,7 @@ Errors      ArchivePage_save(const ArchivePage*     self)
     // write the file header
     error = ArchivePage_write_file_header(self);
     if (error != E_SUCCESS) {
-        printf("ArchivePage_save, error = %d\n", error);
+        printf("An error when saving page, error = %d\n", error);
         return error;
     }
     return E_SUCCESS;
