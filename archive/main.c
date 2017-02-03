@@ -192,6 +192,7 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
     if (error != E_SUCCESS) {
         printf("Failed while checking archive after saving, error = %d\n", error);
         Archive_free(&archive);
+        free(new_filenames);
         return error;
     }
     
