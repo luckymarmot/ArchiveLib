@@ -59,10 +59,10 @@ static void test_Archive_free(void **state) {
     assert_int_not_equal(malloc_size(filename), 0);
     assert_int_not_equal(malloc_size(index), 0);
 
+    /////////// FREE THE ARCHIVE
     Archive_free(&archive);
-    test_free(archive.base_file_path);
-    assert_null(archive.base_file_path);
-    assert_null(archive.page_stack);
+    ////////// test that that it is free
+
     assert_int_equal(archive.n_pages, 0);
 
     assert_int_equal(malloc_size(page), 0);
@@ -73,6 +73,69 @@ static void test_Archive_free(void **state) {
     assert_int_equal(malloc_size(filename), 0);
     assert_int_equal(malloc_size(index), 0);
 }
+
+/**
+ *
+ *  Test archive free
+ */
+static void test_Archive_has(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    Archive_add_empty_page(&archive);
+
+    char key[20] = {
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100
+    };
+
+    assert_false(Archive_has(&archive, key));
+
+    HashIndex* index = archive.page_stack->page->index;
+    HashIndex_set(index, key, 0, 0);
+
+    assert_true(Archive_has(&archive, key));
+
+    // Add lots of pages
+    for (int i = 0; i < 5; ++i) {
+        Archive_add_empty_page(&archive);
+        assert_true(Archive_has(&archive, key));
+    }
+
+    // Lookup with more than 1 value in bucket
+    char key2[20] = {
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 101
+    };
+    assert_false(Archive_has(&archive, key2));
+    HashIndex_set(index, key2, 1, 1);
+    assert_true(Archive_has(&archive, key2));
+
+    char key3[20] = {
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 102
+    };
+    assert_false(Archive_has(&archive, key3));
+
+    // Insect in the middle of the stack
+    HashIndex_set(
+            archive.page_stack->next->page->index,
+            key3, 1, 1
+    );
+
+    assert_true(Archive_has(&archive, key3));
+
+
+
+
+
+}
+
+
+
+
 
 /* A test_archive case that does nothing and succeeds. */
 static void test_archive_init(void **state) {
@@ -197,7 +260,8 @@ int main(void) {
             cmocka_unit_test(test_HashIndex_init),
             cmocka_unit_test(test_ArchivePage),
             cmocka_unit_test(test_Archive_init),
-            cmocka_unit_test(test_Archive_free)
+            cmocka_unit_test(test_Archive_free),
+            cmocka_unit_test(test_Archive_has)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
