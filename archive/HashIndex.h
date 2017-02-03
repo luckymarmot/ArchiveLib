@@ -39,7 +39,7 @@ typedef struct HashPage
 typedef struct HashIndex
 {
     size_t                  n_items;
-    HashPage*               pages[256];
+    HashPage                pages[256];
 } HashIndex;
 
 

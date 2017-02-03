@@ -56,7 +56,7 @@ Errors    HashIndex_pack(HashIndex*             self,
     int i = 0, j = 0;
     HashPage* page;
     for(i = 0; i < 256; i = i + 1 ){
-        page = self->pages[i];
+        page = &(self->pages[i]);
         if (page != NULL) {
             if (n_items + page->n_items > capacity) {
                 return E_INDEX_OUT_OF_BOUNDS;
