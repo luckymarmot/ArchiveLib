@@ -136,6 +136,8 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
     Errors error;
     Archive archive;
     
+    printf("== Build archive ==\n");
+    
     // init archive and add a first page
     Archive_init(&archive, "./");
     error = Archive_add_empty_page(&archive);
@@ -207,8 +209,9 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
     Errors error;
     Archive archive;
 
+    printf("== Read archive ==\n");
+    
     // init archive
-    printf("Init archive\n");
     Archive_init(&archive, "./");
     
     // add pages

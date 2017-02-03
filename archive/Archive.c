@@ -74,9 +74,6 @@ static inline Errors    Archive_add_page(Archive*       self,
     char* filepath;
     asprintf(&filepath, "%s%s", self->base_file_path, filename);
     
-    // log
-    printf("Add archive page, new? = %d, filename = %s\n", new_file, filename);
-    
     // make sure we have enough space, or we realloc
     if (self->n_pages >= self->capacity) {
         size_t new_capacity = self->capacity * 2;
