@@ -48,6 +48,7 @@ Errors _set_data_n(Archive* archive, size_t n_items, char** _keys)
     for (int i = 0; i < n_items; i++) {
         error = _set_data(archive, keys + (20 * i), i);
         if (error != E_SUCCESS) {
+            free(keys);
             return error;
         }
     }
@@ -146,6 +147,7 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
         error = Archive_add_page_by_name(&archive, filename);
         if (error != E_SUCCESS) {
             printf("Error adding page for file: filename = %s, error = %d\n", filename, error);
+            Archive_free(&archive);
             return error;
         }
     }
@@ -170,6 +172,7 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
         error = Archive_get(&archive, key, &data, &data_size);
         if (error != E_SUCCESS) {
             printf("Failed to load dynamic key, i = %d, error = %d\n", i, error);
+            Archive_free(&archive);
             return error;
         }
         free(data);
@@ -201,6 +204,8 @@ int main()
     error = _read_archive(filenames, n_files, keys, n_items);
     if (error != E_SUCCESS) {
         printf("Failed reading archive\n");
+        free(filenames);
+        free(keys);
         return 2;
     }
     
