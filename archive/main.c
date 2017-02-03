@@ -26,7 +26,7 @@ int main() {
     // add data
     Archive_set(&archive, key, "the data", 8);
     Archive_set(&archive, key2, "the other data", 14);
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 100000; i++) {
         u_int32_t r = arc4random();
         key2[0] = r & 0xff;
         key2[1] = (r & 0xff00) >> 8;
@@ -74,6 +74,19 @@ int main() {
     free(str_err);
     printf("Length = %lu, Data = %.*s\n", data_size, (int)data_size, data);
     free(data);
+    size_t _errs = 0;
+    for (int i = 0; i < 100000; i++) {
+        u_int32_t r = arc4random();
+        key2[0] = r & 0xff;
+        key2[1] = (r & 0xff00) >> 8;
+        key2[2] = (r & 0xff0000) >> 16;
+        key2[3] = (r & 0xff000000) >> 24;
+        error = Archive_get(&archive, key2, &data, &data_size);
+        if (error == E_SUCCESS) {
+            free(data);
+        }
+        _errs |= error;
+    }
     Archive_free(&archive);
 
     return 0;
