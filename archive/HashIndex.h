@@ -8,6 +8,15 @@
 #define _MAX_ITEMS_PER_INDEX 2000
 static const size_t MAX_ITEMS_PER_INDEX = _MAX_ITEMS_PER_INDEX;
 
+#pragma mark - Lookup Key
+
+#define HashIndexPageCount 256
+
+static inline size_t _HashIndex_key(const char* key)
+{
+    return (unsigned char)key[0];
+}
+
 #pragma mark - Structs
 
 /**
@@ -40,7 +49,7 @@ typedef struct HashPage
 typedef struct HashIndex
 {
     size_t                  n_items;
-    HashPage                pages[256];
+    HashPage                pages[HashIndexPageCount];
 } HashIndex;
 
 

@@ -55,7 +55,7 @@ Errors    HashIndex_pack(HashIndex*             self,
     size_t n_items = 0;
     int i = 0, j = 0;
     HashPage* page;
-    for(i = 0; i < 256; i = i + 1 ){
+    for(i = 0; i < HashIndexPageCount; i++){
         page = &(self->pages[i]);
         if (page != NULL) {
             if (n_items + page->n_items > capacity) {
@@ -85,18 +85,18 @@ void      HashIndex_unpack(HashIndex*           self,
     // is best here to reduce lookups
     size_t i;
     PackedHashItem* current_item = items;
-    unsigned char item_chr;
-    unsigned char current_page_chr = current_item->key[0];
+    size_t item_lookup_key;
+    size_t current_lookup_key = _HashIndex_key(current_item->key);
     HashPage* current_page = HashIndex_get_or_create_page(self, current_item->key);
     
     for (i = 0; i < n_items; i++) {
         // this is part of a packed struct so memory is managed outside
         // Could do a spead up hear loop until there is a change of page and
         // then mass copy all at once to the old page.
-        item_chr = current_item->key[0];
-        if (current_page_chr != item_chr) {
+        item_lookup_key = _HashIndex_key(current_item->key);
+        if (current_lookup_key != item_lookup_key) {
             current_page = HashIndex_get_or_create_page(self, current_item->key);
-            current_page_chr = item_chr;
+            current_lookup_key = item_lookup_key;
         }
         HashPage_set_packed(current_page, current_item);
         current_item++;

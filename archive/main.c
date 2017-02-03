@@ -240,13 +240,12 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
 int main()
 {
     Errors error;
-    size_t n_items = 100000;
-
-    // == Writing ==
-    
     char* filenames;
     char* keys;
     size_t n_files;
+    size_t n_items = 100000;
+
+    // == Writing ==
     error = _build_archive(&filenames, &n_files, &keys, n_items);
     if (error != E_SUCCESS) {
         printf("Failed building archive\n");

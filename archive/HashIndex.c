@@ -144,8 +144,7 @@ static inline void        _HashPage_set(HashPage*           self,
 static inline HashPage*     _HashIndex_get_page(HashIndex*  self,
                                                 const char* key)
 {
-    unsigned char lookup_chr = key[0];
-    return &(self->pages[lookup_chr]);
+    return &(self->pages[_HashIndex_key(key)]);
 }
 
 
@@ -155,14 +154,14 @@ static inline HashPage*     _HashIndex_get_page(HashIndex*  self,
 void      HashIndex_init(HashIndex*                   self)
 {
     self->n_items = 0;
-    memset(self->pages, 0, sizeof(HashPage[256]));
+    memset(self->pages, 0, sizeof(HashPage[HashIndexPageCount]));
 }
 
 
 void      HashIndex_free(HashIndex*                   self)
 {
     HashPage* page;
-    for (int i = 0; i <= 255; ++i) {
+    for (int i = 0; i < HashIndexPageCount; ++i) {
         page = &(self->pages[i]);
         if (page->items != NULL) {
             _HashPage_free(page);
@@ -174,8 +173,7 @@ void      HashIndex_free(HashIndex*                   self)
 HashPage* HashIndex_get_or_create_page(HashIndex*     self,
                                        const char*    key)
 {
-    unsigned char lookup_chr = key[0];
-    HashPage* page = &(self->pages[lookup_chr]);
+    HashPage* page = &(self->pages[_HashIndex_key(key)]);
     if (page->items == NULL) {
         _HashPage_init(page);
     }
