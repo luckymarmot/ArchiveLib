@@ -12,7 +12,7 @@ void        Archive_init(Archive*                 self,
 
     // copy base file path
     size_t base_file_path_size = strlen(base_file_path) + 1;
-    self->base_file_path = malloc(base_file_path_size);
+    self->base_file_path = (char*)malloc(base_file_path_size);
     memcpy(self->base_file_path, base_file_path, base_file_path_size);
 }
 
@@ -38,29 +38,51 @@ void        Archive_free(Archive*                 self)
 
 
 Errors      Archive_save(const Archive*           self,
-                         char***                  _filenames,
-                         size_t*                  _n_files)
+                         ArchiveSaveResult*       result)
 {
     Errors error;
-    char** filenames = (char **)malloc(sizeof(char*) * self->n_pages);
+    ArchivePage* page;
+    ArchiveSaveFile* file;
+    size_t filename_size;
+    bool has_changes;
     size_t n_pages = self->n_pages;
+    result->count = 0;
+    result->files = NULL;
+    
+    // if empty, we're done
+    if (n_pages == 0) {
+        return E_SUCCESS;
+    }
+    
+    // alloc a number of ArchiveSaveFile
+    result->files = (ArchiveSaveFile*)malloc(sizeof(ArchiveSaveFile) * n_pages);
 
     // save all pages
     for (size_t i = 0; i < n_pages; i++) {
-        ArchivePage* page = &(self->pages[i]);
+        page = self->pages + i;
+        file = result->files + i;
+        has_changes = page->has_changes;
+        
+        // save page
         error = ArchivePage_save(page);
         if (error != E_SUCCESS) {
             printf("Failed to save!!! %d\n", error);
             printf("File not saved ERROR: %s\n", strerror(errno));
-            free(filenames);
+            ArchiveSaveResult_free(result);
             return error;
         }
-        filenames[i] = page->filename;
+        
+        // copy the filename
+        filename_size = strlen(page->filename) + 1;
+        file->filename = (char*)malloc(filename_size);
+        memcpy(file->filename, page->filename, filename_size);
+        
+        // set has changes flag
+        file->has_changes = has_changes;
+        
+        // increment the result count
+        result->count++;
     }
-    
-    // set return pointers
-    *_filenames = filenames;
-    *_n_files = n_pages;
     
     return E_SUCCESS;
 }

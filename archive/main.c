@@ -78,7 +78,7 @@ static inline Errors _read_key(Archive* archive, const char* key)
 Errors _check_archive_has_invalid_keys(Archive* archive, size_t n_items)
 {
     char key[20];
-    for (int i = 0; i < n_items; i++) {
+    for (int i = 0; i < 100000; i++) {
         rand_key(key);
         if (Archive_has(archive, key)) {
             printf("Failed on has() invalid key (shouldn't have been found), i = %d\n", i);
@@ -173,6 +173,7 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
 {
     Errors error;
     Archive archive;
+    ArchiveSaveResult result;
     
     printf("== Build archive ==\n");
     
@@ -190,11 +191,6 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
         printf("Failed to set static keys, error = %d\n", error);
         return error;
     }
-    error = Archive_set(&archive, s_key2, "the other data", 14);
-    if (error != E_SUCCESS) {
-        printf("Failed to set static keys, error = %d\n", error);
-        return error;
-    }
 
     // add data (with many dynamic keys)
     error = _set_data_n(&archive, n_items, _keys);
@@ -203,41 +199,66 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
         return error;
     }
     
-    // check archive (before save)
-    error = _check_archive(&archive, *_keys, n_items);
+    // save the archive
+    error = Archive_save(&archive, &result);
     if (error != E_SUCCESS) {
-        printf("Failed while checking archive after building, error = %d\n", error);
+        printf("Failed while saving the archive, errro = %d\n", error);
         Archive_free(&archive);
+        return error;
+    }
+    if (result.count == 0) {
+        printf("No archive file was saved\n");
+        Archive_free(&archive);
+        ArchiveSaveResult_free(&result);
+        return E_NOT_FOUND;
+    }
+    printf("Save Archive (1):\n");
+    ArchiveSaveResult_print(&result);
+    ArchiveSaveResult_free(&result);
+    
+    // add more data (with static keys)
+    error = Archive_set(&archive, s_key2, "the other data", 14);
+    if (error != E_SUCCESS) {
+        printf("Failed to set static keys, error = %d\n", error);
         return error;
     }
     
     // save the archive
-    size_t n_files;
-    char** filenames;
-    Archive_save(&archive, &filenames, &n_files);
-    
-    // copy archive names
-    char* new_filenames = malloc(sizeof(char) * 256 * n_files);
-    for (int i = 0; i < n_files; i++) {
-        printf("Archive file = %s\n", filenames[i]);
-        strcpy(new_filenames + (256 * i), filenames[i]);
+    error = Archive_save(&archive, &result);
+    if (error != E_SUCCESS) {
+        printf("Failed while saving the archive, errro = %d\n", error);
+        Archive_free(&archive);
+        return error;
     }
-    free(filenames);
-    filenames = NULL;
-    *_filenames = new_filenames;
-    *_n_files = n_files;
+    if (result.count == 0) {
+        printf("No archive file was saved\n");
+        Archive_free(&archive);
+        ArchiveSaveResult_free(&result);
+        return E_NOT_FOUND;
+    }
+    printf("Save Archive (2):\n");
+    ArchiveSaveResult_print(&result);
     
-    // check archive (after save)
+    // check archive
     error = _check_archive(&archive, *_keys, n_items);
     if (error != E_SUCCESS) {
         printf("Failed while checking archive after saving, error = %d\n", error);
         Archive_free(&archive);
-        free(new_filenames);
+        ArchiveSaveResult_free(&result);
         return error;
     }
     
     // destroy the archive
     Archive_free(&archive);
+    
+    // copy archive names
+    char* new_filenames = malloc(sizeof(char) * 256 * result.count);
+    for (int i = 0; i < result.count; i++) {
+        strcpy(new_filenames + (256 * i), result.files[i].filename);
+    }
+    *_filenames = new_filenames;
+    *_n_files = result.count;
+    ArchiveSaveResult_free(&result);
     
     return E_SUCCESS;
 }

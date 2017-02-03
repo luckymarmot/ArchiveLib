@@ -39,6 +39,7 @@
 		AE5E49FB1E43A9C1002D2851 /* HashIndexPack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = HashIndexPack.c; path = archive/HashIndexPack.c; sourceTree = SOURCE_ROOT; };
 		AE5E49FC1E43A9C1002D2851 /* HashIndexPack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HashIndexPack.h; path = archive/HashIndexPack.h; sourceTree = SOURCE_ROOT; };
 		AE5E49FE1E43B6F9002D2851 /* Endian.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Endian.h; path = archive/Endian.h; sourceTree = SOURCE_ROOT; };
+		AE5E4A001E44D2E9002D2851 /* ArchiveSaveResult.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ArchiveSaveResult.h; path = archive/ArchiveSaveResult.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +89,7 @@
 				AE42F21A1E4370B8004463C5 /* HashIndex.h */,
 				AE5E49FB1E43A9C1002D2851 /* HashIndexPack.c */,
 				AE5E49FC1E43A9C1002D2851 /* HashIndexPack.h */,
+				AE5E4A001E44D2E9002D2851 /* ArchiveSaveResult.h */,
 				AE42F2181E4370B8004463C5 /* Errors.h */,
 				AE5E49FE1E43B6F9002D2851 /* Endian.h */,
 			);

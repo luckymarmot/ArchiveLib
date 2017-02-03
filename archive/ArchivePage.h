@@ -30,6 +30,7 @@ typedef struct ArchivePage
     size_t                  data_size;
     file_descriptor         fd;
     char*                   filename;
+    bool                    has_changes;
 } ArchivePage;
 
 
@@ -60,7 +61,7 @@ void        ArchivePage_free(ArchivePage*           self);
  @param self The archive page.
  @return An error code.
  */
-Errors      ArchivePage_save(const ArchivePage*     self);
+Errors      ArchivePage_save(ArchivePage*           self);
 
 
 /**
