@@ -75,13 +75,58 @@ static inline Errors _read_key(Archive* archive, const char* key)
     return E_SUCCESS;
 }
 
+Errors _check_archive_has_invalid_keys(Archive* archive, size_t n_items)
+{
+    char key[20];
+    for (int i = 0; i < n_items; i++) {
+        rand_key(key);
+        if (Archive_has(archive, key)) {
+            printf("Failed on has() invalid key (shouldn't have been found), i = %d\n", i);
+            return E_NOT_FOUND;
+        }
+    }
+    return E_SUCCESS;
+}
+
+Errors _check_archive_has_dynamic_keys(Archive* archive, char* keys, size_t n_items)
+{
+    for (int i = 0; i < n_items; i++) {
+        char* key = keys + (20 * i);
+        if (!Archive_has(archive, key)) {
+            printf("Failed on has() dynamic key (not found), i = %d\n", i);
+            return E_NOT_FOUND;
+        }
+    }
+    return E_SUCCESS;
+}
+
+Errors _check_archive_get_dynamic_keys(Archive* archive, char* keys, size_t n_items)
+{
+    Errors error;
+    char* key;
+    char value[256];
+    char* data;
+    size_t data_size;
+    for (int i = 0; i < n_items; i++) {
+        key = keys + (20 * i);
+        error = Archive_get(archive, key, &data, &data_size);
+        if (error != E_SUCCESS) {
+            printf("Failed to get dynamic key, i = %d, error = %d\n", i, error);
+            return error;
+        }
+        sprintf(value, "[My data, i = %ld]", (size_t)i);
+        if (memcmp(value, data, data_size) != 0) {
+            printf("Data contained in dynamic key is invalid, i = %d\n", i);
+            return E_FILE_READ_ERROR;
+        }
+        free(data);
+    }
+    return E_SUCCESS;
+}
+
 Errors _check_archive(Archive* archive, char* keys, size_t n_items)
 {
     Errors error;
-    char* data;
-    size_t data_size;
-    char* key;
-    char value[256];
     
     // has static key
     if (!Archive_has(archive, s_key1)) {
@@ -104,28 +149,21 @@ Errors _check_archive(Archive* archive, char* keys, size_t n_items)
     }
     
     // has dynamic keys
-    for (int i = 0; i < n_items; i++) {
-        char* key = keys + (20 * i);
-        if (!Archive_has(archive, key)) {
-            printf("Failed on has() dynamic key (not found), i = %d\n", i);
-            return E_NOT_FOUND;
-        }
+    error = _check_archive_has_dynamic_keys(archive, keys, n_items);
+    if (error != E_SUCCESS) {
+        return error;
     }
     
     // get dynamic keys
-    for (int i = 0; i < n_items; i++) {
-        key = keys + (20 * i);
-        error = Archive_get(archive, key, &data, &data_size);
-        if (error != E_SUCCESS) {
-            printf("Failed to get dynamic key, i = %d, error = %d\n", i, error);
-            return error;
-        }
-        sprintf(value, "[My data, i = %ld]", (size_t)i);
-        if (memcmp(value, data, data_size) != 0) {
-            printf("Data contained in dynamic key is invalid, i = %d\n", i);
-            return E_FILE_READ_ERROR;
-        }
-        free(data);
+    error = _check_archive_get_dynamic_keys(archive, keys, n_items);
+    if (error != E_SUCCESS) {
+        return error;
+    }
+    
+    // get invalid keys
+    error = _check_archive_has_invalid_keys(archive, n_items);
+    if (error != E_SUCCESS) {
+        return error;
     }
     
     return E_SUCCESS;
