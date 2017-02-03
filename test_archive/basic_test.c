@@ -201,7 +201,9 @@ static void test_Archive_set(void **state) {
 
 
     char* data = "data";
+
     Errors error = Archive_set(&archive, key, data, 5);
+
     assert_int_equal(error, 0);
     assert_true(Archive_has(&archive, key));
 
@@ -210,6 +212,7 @@ static void test_Archive_set(void **state) {
     char filename[10000];
     size_t _n_files;
     Archive_save(&archive, &filenames, &_n_files);
+
     strcpy(filename, filenames[0]);
 
     Archive_free(&archive);
@@ -241,6 +244,7 @@ static void test_Archive_set(void **state) {
     strcpy(filename, filenames[0]);
     Archive_free(&archive2);
 
+    ///// Test that the the data was saved to the latest archive.
     Archive archive3;
     Archive_init(&archive3, "./");
     e = Archive_add_page_by_name(&archive3, filename+2);
@@ -248,6 +252,95 @@ static void test_Archive_set(void **state) {
     assert_false(Archive_has(&archive3, key));
 }
 
+
+/**
+ *
+ *  Test archive has
+ */
+static void test_Archive_set__index_inserts(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    Archive_add_empty_page(&archive);
+
+    char key[20] = {
+            0x00, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100
+    };
+
+    Archive_set(&archive, key, "data", 5);
+
+    assert_int_equal(archive.pages[0].index->pages[0x00].n_items, 1);
+    assert_memory_equal(archive.pages[0].index->pages[0x00].items[0].key, key, 20);
+    assert_int_equal(archive.pages[0].index->pages[0x00].items[0].data_offset, 0);
+    assert_int_equal(archive.pages[0].index->pages[0x00].items[0].data_size, 5);
+
+    // Does not insert again!
+    Archive_set(&archive, key, "data", 5);
+    assert_int_equal(archive.pages[0].index->pages[0x00].n_items, 1);
+
+    // Add another page! still does not insert on either page!
+    Archive_add_empty_page(&archive);
+    Archive_set(&archive, key, "data", 5);
+    assert_int_equal(archive.pages[1].index->pages[0x00].n_items, 0);
+    assert_int_equal(archive.pages[0].index->pages[0x00].n_items, 1);
+    assert_true(Archive_has(&archive, key));
+    // a new key
+    key[0] = (char) 0xff;
+    assert_false(Archive_has(&archive, key));
+    // assert copies key
+    assert_memory_not_equal(archive.pages[0].index->pages[0x00].items[0].key, key, 20);
+
+    Archive_set(&archive, key, "data", 5);
+    assert_int_equal(archive.pages[1].index->pages[0x00].n_items, 0);
+    assert_int_equal(archive.pages[1].index->pages[0xff].n_items, 1);
+    // New files go to the new archive
+    assert_int_equal(archive.pages[0].index->pages[0xff].n_items, 0);
+    // Data possition is file local
+    assert_int_equal(archive.pages[1].index->pages[0xff].items[0].data_offset, 0);
+    assert_true(Archive_has(&archive, key));
+
+    key[1] = (char) 0xf1;
+    assert_false(Archive_has(&archive, key));
+    Archive_set(&archive, key, "data", 5);
+    assert_int_equal(archive.pages[1].index->pages[0xff].n_items, 2);
+    assert_memory_not_equal(archive.pages[1].index->pages[0xff].items[0].key, key, 20);
+    assert_memory_equal(archive.pages[1].index->pages[0xff].items[1].key, key, 20);
+    // Assert offset is correct
+    assert_int_equal(archive.pages[1].index->pages[0xff].items[1].data_offset,
+                     archive.pages[1].index->pages[0xff].items[0].data_size);
+    key[1] = (char) 0xf2;
+    assert_false(Archive_has(&archive, key));
+    Archive_set(&archive, key, "lots_andLots of data", 21);
+    assert_int_equal(archive.pages[1].index->pages[0xff].n_items, 3);
+
+    // we can find it
+    assert_true(Archive_has(&archive, key));
+
+    assert_int_equal(archive.pages[0].index->n_items, 1);
+    assert_int_equal(archive.pages[1].index->n_items, 3);
+
+    // Test inset with same first key part onto new file
+    Archive_add_empty_page(&archive);
+    key[1] = (char) 0xf3;
+    assert_false(Archive_has(&archive, key));
+    Archive_set(&archive, key, "lots_andLots of data", 21);
+    assert_int_equal(archive.pages[0].index->pages[0xff].n_items, 0);
+    assert_int_equal(archive.pages[1].index->pages[0xff].n_items, 3);
+    assert_int_equal(archive.pages[2].index->pages[0xff].n_items, 1);
+    assert_int_equal(archive.pages[0].index->n_items, 1);
+    assert_int_equal(archive.pages[1].index->n_items, 2);
+    assert_int_equal(archive.pages[1].index->n_items, 3);
+
+    // test saving and loading different sets of files
+    char** filenames;
+    char filename[10000];
+    size_t _n_tiems
+
+    Archive_save(&archive, &filenames, &_n_tiems);
+
+
+}
 
 
 
@@ -356,7 +449,8 @@ int main(void) {
             cmocka_unit_test(test_Archive_init),
             cmocka_unit_test(test_Archive_free),
             cmocka_unit_test(test_Archive_has),
-            cmocka_unit_test(test_Archive_set)
+            cmocka_unit_test(test_Archive_set),
+            cmocka_unit_test(test_Archive_set__index_inserts)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
