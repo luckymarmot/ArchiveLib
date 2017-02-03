@@ -234,9 +234,18 @@ static void test_Archive_set(void **state) {
         ef = Archive_set(&archive2, key, "data", 5);
         assert_int_equal(ef, 0);
         assert_true(Archive_has(&archive2, key));
-        ef = Archive_set(&archive2, key, "data", 5);
+        Archive_set(&archive2, key, "data", 5);
     }
     assert_int_equal(archive2.n_pages, 11);
+    Archive_save(&archive2, &filenames, &_n_files);
+    strcpy(filename, filenames[0]);
+    Archive_free(&archive2);
+
+    Archive archive3;
+    Archive_init(&archive3, "./");
+    e = Archive_add_page_by_name(&archive3, filename+2);
+    assert_int_equal(e, 0);
+    assert_false(Archive_has(&archive3, key));
 }
 
 
