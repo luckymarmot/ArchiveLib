@@ -330,12 +330,49 @@ static void test_Archive_set__index_inserts(void **state) {
     assert_int_equal(archive.pages[2].index->n_items, 1);
 
     // test saving and loading different sets of files
-    char** filenames;
-    char filename[10000];
+
     ArchiveSaveResult saves;
     Archive_save(&archive, &saves);
+    Archive_free(&archive);
 
+    Archive archive_layers_0;
+    Archive_init(&archive_layers_0, "./");
+    Errors e = Archive_add_page_by_name(&archive_layers_0, saves.files[0].filename);
 
+    assert_int_equal(e, 0);
+
+    assert_int_equal(archive_layers_0.pages[0].index->n_items, 1);
+
+    size_t size = archive_layers_0.pages[0].data_size;
+
+    assert_false(Archive_has(&archive_layers_0, key));
+
+    char key2[20] = {
+            0x00, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100
+    };
+
+    assert_true(Archive_has(&archive_layers_0, key2));
+
+    // Write into this,
+    e = Archive_set(&archive_layers_0, key, "data", 5);
+    assert_int_not_equal(archive_layers_0.pages[0].data_size, size);
+
+    assert_int_equal(e, 0);
+    assert_true(Archive_has(&archive_layers_0, key));
+
+    // DO NOT SAVE
+    Archive_free(&archive_layers_0);
+
+    Archive archive_layers_0_repeat;
+    Archive_init(&archive_layers_0_repeat, "./");
+    e = Archive_add_page_by_name(&archive_layers_0_repeat, saves.files[0].filename);
+
+    assert_int_equal(e, 0);
+    assert_false(Archive_has(&archive_layers_0_repeat, key));
+    assert_int_equal(archive_layers_0_repeat.pages[0].index->n_items, 1);
+    assert_int_equal(archive_layers_0_repeat.pages[0].data_size, size);
 }
 
 
