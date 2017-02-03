@@ -157,6 +157,42 @@ static void test_Archive_has(void **state) {
 
 
 
+/**
+ *
+ *  Test archive has
+ */
+static void test_Archive_set(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    Archive_add_empty_page(&archive);
+
+    char key[20] = {
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100
+    };
+
+    assert_false(Archive_has(&archive, key));
+
+
+    char* data = "data";
+    Errors error = Archive_set(&archive, key, data, 5);
+    assert_int_equal(error, 0);
+    assert_true(Archive_has(&archive, key));
+
+    // Free this archive so we can open again
+    char** filenames;
+    size_t _n_files;
+    Archive_save(&archive, &filenames, &_n_files);
+    Archive_free(&archive);
+
+    Archive archive2;
+    Archive_init(&archive2, "./");
+    printf("FILENAME %s", filenames[0]);
+    Errors e = Archive_add_page_by_name(&archive2, filenames[0]+2);
+    assert_int_equal(e, 0);
+
+}
 
 
 
@@ -285,7 +321,8 @@ int main(void) {
             cmocka_unit_test(test_ArchivePage),
             cmocka_unit_test(test_Archive_init),
             cmocka_unit_test(test_Archive_free),
-            cmocka_unit_test(test_Archive_has)
+            cmocka_unit_test(test_Archive_has),
+            cmocka_unit_test(test_Archive_set)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
