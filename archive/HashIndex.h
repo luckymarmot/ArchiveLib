@@ -1,6 +1,8 @@
 #ifndef ARCHIVELIB_HASHINDEX_H
 #define ARCHIVELIB_HASHINDEX_H
 
+#include <stdint.h>
+#include <stdbool.h>
 #include "Errors.h"
 
 #define _MAX_ITEMS_PER_INDEX 2000
