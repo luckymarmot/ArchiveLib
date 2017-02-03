@@ -149,6 +149,7 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     
     // populate the ArchivePage fields
     self->data_size = data_size;
+    self->has_changes = false;
     
     // read index
     error = ArchivePage_read_file_index(self, n_items);
@@ -347,6 +348,7 @@ Errors      ArchivePage_init(ArchivePage*           self,
     // loads file header and index
     if (new_file) {
         self->data_size = 0;
+        self->has_changes = true;
     } else {
         error = ArchivePage_read_file_header(self);
         if (error != E_SUCCESS) {
@@ -374,9 +376,14 @@ void        ArchivePage_free(ArchivePage*           self)
 }
 
 
-Errors      ArchivePage_save(const ArchivePage*     self)
+Errors      ArchivePage_save(ArchivePage*           self)
 {
     Errors error;
+    
+    // skip write if there are no changes
+    if (!self->has_changes) {
+        return E_SUCCESS;
+    }
     
     // write the file header
     error = ArchivePage_write_file_header(self);
@@ -384,6 +391,7 @@ Errors      ArchivePage_save(const ArchivePage*     self)
         printf("An error when saving page, error = %d\n", error);
         return error;
     }
+    self->has_changes = false;
     return E_SUCCESS;
 }
 
@@ -424,5 +432,9 @@ Errors      ArchivePage_set(ArchivePage*            self,
         return error;
     }
     error = HashIndex_set(self->index, key, offset, size);
-    return error;
+    if (error != E_SUCCESS) {
+        return error;
+    }
+    self->has_changes = true;
+    return E_SUCCESS;
 }

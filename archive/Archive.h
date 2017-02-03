@@ -15,6 +15,10 @@
 #include "Errors.h"
 #include "ArchivePage.h"
 #include "HashIndex.h"
+#include "ArchiveSaveResult.h"
+
+
+#pragma mark - Archive
 
 
 /**
@@ -114,15 +118,12 @@ Errors      Archive_add_page_by_name(Archive*     self,
  Saves all pages of the archive to the file system.
 
  @param self The archive.
- @param _filenames A pointer in which an array of filenames will be written.
-                   It's the caller responsibility to free() the char** array
-                   that was set to this pointer.
- @param _n_files The number of archive files in the archive.
+ @param result A pointer to the result of the save. The caller must
+               free the result object using ArchiveSaveResult_free.
  @return An error code.
  */
 Errors      Archive_save(const Archive*           self,
-                         char***                  _filenames,
-                         size_t*                  _n_files);
+                         ArchiveSaveResult*       result);
 
 
 #endif //ARCHIVELIB_ARCHIVE_H
