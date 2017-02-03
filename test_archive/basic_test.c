@@ -13,7 +13,7 @@
 #include <malloc/malloc.h>
 
 static void test_ArchivePage(void **state) {
-    assert_int_equal(sizeof(ArchivePage), 32);
+    assert_int_equal(sizeof(ArchivePage), 0x28);
 }
 
 
@@ -208,18 +208,16 @@ static void test_Archive_set(void **state) {
     assert_true(Archive_has(&archive, key));
 
     // Free this archive so we can open again
-    char** filenames;
-    char filename[10000];
+    ArchiveSaveResult saves;
     size_t _n_files;
-    Archive_save(&archive, &filenames, &_n_files);
+    Archive_save(&archive, &saves);
 
-    strcpy(filename, filenames[0]);
 
     Archive_free(&archive);
 
     Archive archive2;
     Archive_init(&archive2, "./");
-    Errors e = Archive_add_page_by_name(&archive2, filename+2);
+    Errors e = Archive_add_page_by_name(&archive2, saves.files[0].filename + 2);
     assert_int_equal(e, 0);
 
     assert_true(Archive_has(&archive2, key));
@@ -240,14 +238,13 @@ static void test_Archive_set(void **state) {
         Archive_set(&archive2, key, "data", 5);
     }
     assert_int_equal(archive2.n_pages, 11);
-    Archive_save(&archive2, &filenames, &_n_files);
-    strcpy(filename, filenames[0]);
+    Archive_save(&archive2, &saves);
     Archive_free(&archive2);
 
     ///// Test that the the data was saved to the latest archive.
     Archive archive3;
     Archive_init(&archive3, "./");
-    e = Archive_add_page_by_name(&archive3, filename+2);
+    e = Archive_add_page_by_name(&archive3, saves.files[0].filename+2);
     assert_int_equal(e, 0);
     assert_false(Archive_has(&archive3, key));
 }
@@ -329,15 +326,14 @@ static void test_Archive_set__index_inserts(void **state) {
     assert_int_equal(archive.pages[1].index->pages[0xff].n_items, 3);
     assert_int_equal(archive.pages[2].index->pages[0xff].n_items, 1);
     assert_int_equal(archive.pages[0].index->n_items, 1);
-    assert_int_equal(archive.pages[1].index->n_items, 2);
     assert_int_equal(archive.pages[1].index->n_items, 3);
+    assert_int_equal(archive.pages[2].index->n_items, 1);
 
     // test saving and loading different sets of files
     char** filenames;
     char filename[10000];
-    size_t _n_tiems
-
-    Archive_save(&archive, &filenames, &_n_tiems);
+    ArchiveSaveResult saves;
+    Archive_save(&archive, &saves);
 
 
 }
