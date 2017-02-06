@@ -81,7 +81,10 @@ static inline Errors    read_from_file(file_descriptor  fd,
         // > On success, pread() returns the number of bytes read (a return of
         // > zero indicates end of file).
         // > On error, -1 is returned.
-        if (r <= 0) {
+        if (r == 0) {
+            return E_FILE_READ_ERROR;
+        }
+        if (r < 0) {
             return E_SYSTEM_ERROR_ERRNO;
         }
         read += r;
