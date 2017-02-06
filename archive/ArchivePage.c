@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "Endian.h"
 #include "ArchivePage.h"
@@ -38,6 +39,16 @@ static size_t ArchivePage_capacity = _MAX_ITEMS_PER_INDEX;
 #pragma mark Read / Write
 
 
+static inline off_t     fsize(const char*               filename)
+{
+    struct stat st;
+    if (stat(filename, &st) == 0) {
+        return st.st_size;
+    }
+    return (-1);
+}
+
+
 static inline Errors    write_to_file(file_descriptor   fd,
                                       const void*       buffer,
                                       size_t            size,
@@ -65,6 +76,14 @@ static inline Errors    read_from_file(file_descriptor  fd,
     ssize_t r;
     while (read < size) {
         r = pread(fd, (char*)buffer + read, size - read, offset + read);
+        // If `pread` returns 0 or <0, we can consider this an error.
+        // As per the spec:
+        // > On success, pread() returns the number of bytes read (a return of
+        // > zero indicates end of file).
+        // > On error, -1 is returned.
+        if (r == 0) {
+            return E_FILE_READ_ERROR;
+        }
         if (r < 0) {
             return E_SYSTEM_ERROR_ERRNO;
         }
@@ -122,6 +141,10 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     
     // read ArchiveFileHeader from file
     ArchiveFileHeader file_header;
+    off_t size = fsize(self->filename);
+    if (size < sizeof(ArchiveFileHeader)) {
+        return E_FILE_READ_ERROR;
+    }
     error = read_from_file(self->fd, &file_header, sizeof(ArchiveFileHeader), 0);
     if (error != E_SUCCESS) {
         return error;
@@ -143,7 +166,8 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     if (index_start != ArchivePage_index_start ||
         data_start != ArchivePage_data_start ||
         capacity != ArchivePage_capacity ||
-        n_items > capacity) {
+        n_items > capacity ||
+        data_size + data_start > size) {
         return E_INVALID_ARCHIVE_HEADER;
     }
     
@@ -223,10 +247,15 @@ static inline Errors    ArchivePage_write_file_header(const ArchivePage* self)
  @param self The archive.
  @return An error code.
  */
-static inline Errors    ArchivePage_open_file(ArchivePage*      self)
+static inline Errors    ArchivePage_open_file(ArchivePage*      self,
+                                              bool              new_file)
 {
     // open a (new) file for read and write with use ownership
-    file_descriptor fd = open(self->filename , O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    int flags = O_RDWR;
+    if (new_file) {
+        flags |= (O_CREAT | O_EXCL);
+    }
+    file_descriptor fd = open(self->filename , flags, S_IRUSR | S_IWUSR);
     if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
@@ -333,7 +362,7 @@ Errors      ArchivePage_init(ArchivePage*           self,
     memcpy(self->filename, filename, filename_size);
 
     // open file descriptor
-    error = ArchivePage_open_file(self);
+    error = ArchivePage_open_file(self, new_file);
     if (error != E_SUCCESS) {
         printf("File not opened, error = %s\n", strerror(errno));
         free(self->filename);
