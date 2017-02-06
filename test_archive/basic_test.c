@@ -445,7 +445,7 @@ static void test_Archive_add_page_by_name(void **state) {
     Archive archive2;
     Archive_init(&archive2, "./");
     e = Archive_add_page_by_name(&archive2, filename2);
-    assert_int_equal(e, E_INVALID_ARCHIVE_HEADER);
+    assert_int_equal(e, E_UNKNOWN_ARCHIVE_VERSION);
 }
 
 

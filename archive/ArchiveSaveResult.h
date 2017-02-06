@@ -1,5 +1,6 @@
 #ifndef ARCHIVESAVERESULT_H
 #define ARCHIVESAVERESULT_H
+#include <stdbool.h>
 
 
 typedef struct ArchiveSaveFile {
