@@ -36,19 +36,17 @@ static size_t ArchivePage_data_start = sizeof(ArchiveFileHeader) + (_MAX_ITEMS_P
 static size_t ArchivePage_capacity = _MAX_ITEMS_PER_INDEX;
 
 
-
-
-off_t fsize(const char *filename) {
-    struct stat st;
-
-    if (stat(filename, &st) == 0)
-        return st.st_size;
-
-    return -1;
-}
-
-
 #pragma mark Read / Write
+
+
+static inline off_t     fsize(const char*               filename)
+{
+    struct stat st;
+    if (stat(filename, &st) == 0) {
+        return st.st_size;
+    }
+    return (-1);
+}
 
 
 static inline Errors    write_to_file(file_descriptor   fd,
@@ -78,7 +76,12 @@ static inline Errors    read_from_file(file_descriptor  fd,
     ssize_t r;
     while (read < size) {
         r = pread(fd, (char*)buffer + read, size - read, offset + read);
-        if (r < 0) {
+        // If `pread` returns 0 or <0, we can consider this an error.
+        // As per the spec:
+        // > On success, pread() returns the number of bytes read (a return of
+        // > zero indicates end of file).
+        // > On error, -1 is returned.
+        if (r <= 0) {
             return E_SYSTEM_ERROR_ERRNO;
         }
         read += r;
@@ -245,12 +248,11 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self,
                                               bool              new_file)
 {
     // open a (new) file for read and write with use ownership
-    file_descriptor fd;
+    int flags = O_RDWR;
     if (new_file) {
-        fd = open(self->filename , O_NONBLOCK | O_EXCL | O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-    } else {
-        fd = open(self->filename , O_NONBLOCK | O_RDWR, S_IRUSR | S_IWUSR);
+        flags |= (O_CREAT | O_EXCL);
     }
+    file_descriptor fd = open(self->filename , flags, S_IRUSR | S_IWUSR);
     if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
