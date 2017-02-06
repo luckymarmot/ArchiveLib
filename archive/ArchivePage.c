@@ -286,20 +286,31 @@ static inline void      ArchivePage_close_file(ArchivePage*         self)
 }
 
 
-static Errors           ArchivePage_read_item(const ArchivePage*    self,
+static inline Errors    ArchivePage_read_item(const ArchivePage*    self,
                                               const HashItem*       item,
+                                              size_t                data_max_size,
                                               char**                _data,
                                               size_t*               _data_size)
 {
     size_t data_size = item->data_size;
-    char* data = (char*)malloc(sizeof(char) * data_size);
+    size_t data_offset = item->data_offset;
+    
+    // if a `data_max_size` is specified, and if it's smaller than the actual
+    // file data size, then we read only that `data_max_size` chunk
+    size_t data_read_size = data_size;
+    if (data_max_size > 0 && data_max_size < data_read_size) {
+        data_read_size = data_max_size;
+    }
+   
+    // alloc the data chunk
+    char* data = (char*)malloc(sizeof(char) * data_read_size);
 
     // read from file
     Errors error = read_from_file(
         self->fd,
         data,
-        data_size,
-        (off_t)(ArchivePage_data_start + item->data_offset)
+        data_read_size,
+        (off_t)(ArchivePage_data_start + data_offset)
     );
 
     // if error, free data and return
@@ -425,23 +436,44 @@ Errors      ArchivePage_save(ArchivePage*           self)
 }
 
 
-bool        ArchivePage_has(const ArchivePage*      page,
-                            const char*             key)
+bool        ArchivePage_has(const ArchivePage*      self,
+                            const char*             partial_key,
+                            size_t                  partial_key_len,
+                            char*                   key)
 {
-    return HashIndex_has(page->index, key);
+    if (partial_key_len < 3 || partial_key_len > 20) {
+        return false;
+    }
+    const HashItem* item = HashIndex_get(self->index, partial_key, partial_key_len);
+    if (item == NULL) {
+        return false;
+    }
+    if (key != NULL) {
+        memcpy(key, item->key, 20);
+    }
+    return true;
 }
 
 
 Errors      ArchivePage_get(const ArchivePage*      self,
-                            const char*             key,
+                            const char*             partial_key,
+                            size_t                  partial_key_len,
+                            char*                   key,
+                            size_t                  data_max_size,
                             char**                  _data,
                             size_t*                 _data_size)
 {
-    const HashItem* item = HashIndex_get(self->index, key);
+    if (partial_key_len < 3 || partial_key_len > 20) {
+        return E_INVALID_PARTIAL_KEY_LENGTH;
+    }
+    const HashItem* item = HashIndex_get(self->index, partial_key, partial_key_len);
     if (item == NULL) {
         return E_NOT_FOUND;
     }
-    return ArchivePage_read_item(self, item, _data, _data_size);
+    if (key != NULL) {
+        memcpy(key, item->key, 20);
+    }
+    return ArchivePage_read_item(self, item, data_max_size, _data, _data_size);
 }
 
 

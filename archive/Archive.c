@@ -141,11 +141,13 @@ Errors      Archive_add_empty_page(Archive*       self)
 }
 
 
-bool        Archive_has(const Archive*            self,
-                        const char*               key)
+bool                Archive_has_partial(const Archive*      self,
+                                        const char*         partial_key,
+                                        size_t              partial_key_len,
+                                        char*               key)
 {
     for (long long i = self->n_pages - 1; i >= 0; i--) {
-        if (ArchivePage_has(self->pages + i, key)) {
+        if (ArchivePage_has(self->pages + i, partial_key, partial_key_len, key)) {
             return true;
         }
     }
@@ -153,16 +155,19 @@ bool        Archive_has(const Archive*            self,
 }
 
 
-Errors      Archive_get(const Archive*            self,
-                        const char*               key,
-                        char**                    _data,
-                        size_t*                   _data_size)
+Errors              Archive_get_partial(const Archive*      self,
+                                        const char*         partial_key,
+                                        size_t              partial_key_len,
+                                        char*               key,
+                                        size_t              data_max_size,
+                                        char**              _data,
+                                        size_t*             _data_size)
 {
     Errors error;
     
     for (long long i = self->n_pages - 1; i >= 0; i--) {
         // lookup in an archive
-        error = ArchivePage_get(self->pages + i, key, _data, _data_size);
+        error = ArchivePage_get(self->pages + i, partial_key, partial_key_len, key, data_max_size, _data, _data_size);
         // if success or an error that isn't "not found" stop
         if (error != E_NOT_FOUND) {
             return error;

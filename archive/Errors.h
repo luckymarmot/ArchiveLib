@@ -12,6 +12,7 @@ typedef enum Errors
     E_NOT_FOUND                     = -5,
     E_UNKNOWN_ARCHIVE_VERSION       = -6,
     E_INVALID_ARCHIVE_HEADER        = -7,
+    E_INVALID_PARTIAL_KEY_LENGTH    = -8,
 } Errors;
 
 

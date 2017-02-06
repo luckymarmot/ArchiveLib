@@ -65,21 +65,31 @@ Errors      ArchivePage_save(ArchivePage*           self);
 
 
 /**
- Checks if a given key is inside the archive page.
+ Checks if a given partial key is inside the archive page.
 
  @param page The archive page.
- @param key The key to lookup (a 20 bytes binary string).
- @return An error code.
+ @param partial_key The partial key to lookup (between 3 and 20 bytes).
+ @param partial_key_len The length of the partial key.
+ @param key A pointer in which the full key (20 bytes) will be written.
+            Or NULL, if the user doesn't need to know the full key.
+ @return A boolean representing wheather the given key has been found.
  */
 bool        ArchivePage_has(const ArchivePage*      page,
-                            const char*             key);
+                            const char*             partial_key,
+                            size_t                  partial_key_len,
+                            char*                   key);
 
 
 /**
  Retrieve an item from the archive page.
 
  @param self The archive page.
- @param key The key to lookup (a 20 bytes binary string).
+ @param partial_key The partial key to lookup (between 3 and 20 bytes).
+ @param partial_key_len The length of the partial key.
+ @param key A pointer in which the full key (20 bytes) will be written.
+            Or NULL, if the user doesn't need to know the full key.
+ @param data_max_size The maximum number of bytes to read from the file.
+                      Pass 0 to read the full file.
  @param _data A pointer to the char* that will be returned.
               The returned char* should be free'ed by the caller.
               Data is not null-terminated, may be binary. The caller should
@@ -88,7 +98,10 @@ bool        ArchivePage_has(const ArchivePage*      page,
  @return An error code.
  */
 Errors      ArchivePage_get(const ArchivePage*      self,
-                            const char*             key,
+                            const char*             partial_key,
+                            size_t                  partial_key_len,
+                            char*                   key,
+                            size_t                  data_max_size,
                             char**                  _data,
                             size_t*                 _data_size);
 

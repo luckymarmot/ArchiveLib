@@ -84,25 +84,16 @@ HashPage* HashIndex_get_or_create_page(HashIndex*     self,
 
 
 /**
- Checks if an object if in the index.
-
- @param self The index.
- @param key The key to lookup (a 20 bytes binary string).
- @return A boolearn representing whether the key has been found.
- */
-bool      HashIndex_has(HashIndex*                    self,
-                        const char*                   key);
-
-
-/**
  Retrieves an hash item from the index by its key.
 
  @param self The index.
- @param key The key to lookup (a 20 bytes binary string).
+ @param partial_key The partial key to lookup (between 3 and 20 bytes).
+ @param partial_key_len The length of the partial key.
  @return The hash item.
  */
 const HashItem* HashIndex_get(HashIndex*              self,
-                              const char*             key);
+                              const char*             partial_key,
+                              size_t                  partial_key_len);
 
 
 /**
