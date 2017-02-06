@@ -75,12 +75,46 @@ static inline Errors _read_key(Archive* archive, const char* key)
     return E_SUCCESS;
 }
 
+static inline Errors _read_key_partial(Archive* archive, const char* partial_key, size_t partial_key_len)
+{
+    Errors error;
+    char* data;
+    size_t data_size;
+    char key[20];
+    
+    error = Archive_get_partial(archive, partial_key, partial_key_len, key, 0, &data, &data_size);
+    if (error != E_SUCCESS) {
+        return error;
+    }
+    if (memcmp(key, partial_key, 20) != 0) {
+        printf("Key and partial key comparison failed\n");
+        return E_NOT_FOUND;
+    }
+    printf("Length = %lu, Data = %.*s\n", data_size, (int)data_size, data);
+    free(data);
+    
+    return E_SUCCESS;
+}
+
 Errors _check_archive_has_invalid_keys(Archive* archive, size_t n_items)
 {
     char key[20];
     for (int i = 0; i < 100000; i++) {
         rand_key(key);
         if (Archive_has(archive, key)) {
+            printf("Failed on has() invalid key (shouldn't have been found), i = %d\n", i);
+            return E_NOT_FOUND;
+        }
+    }
+    return E_SUCCESS;
+}
+
+Errors _check_archive_has_invalid_keys_partial(Archive* archive, size_t n_items)
+{
+    char partial_key[20];
+    for (int i = 0; i < 100000; i++) {
+        rand_key(partial_key);
+        if (Archive_has_partial(archive, partial_key, 12, NULL)) {
             printf("Failed on has() invalid key (shouldn't have been found), i = %d\n", i);
             return E_NOT_FOUND;
         }
@@ -124,6 +158,53 @@ Errors _check_archive_get_dynamic_keys(Archive* archive, char* keys, size_t n_it
     return E_SUCCESS;
 }
 
+Errors _check_archive_get_dynamic_keys_partial(Archive* archive, char* keys, size_t n_items)
+{
+    Errors error;
+    const char* key;
+    char partial_key[20];
+    char full_key[20];
+    char value[256];
+    char* data;
+    size_t data_size;
+    for (int i = 0; i < n_items; i++) {
+        // get full key
+        key = keys + (20 * i);
+        
+        // set partial key (set with 0, then copy the N first bytes)
+        memset(partial_key, 0, 20);
+        memcpy(partial_key, key, 12);
+        
+        // perform a partial get (both partial key, and partial data read)
+        error = Archive_get_partial(archive, partial_key, 12, full_key, 15, &data, &data_size);
+        if (error != E_SUCCESS) {
+            printf("Failed to get dynamic key, i = %d, error = %d\n", i, error);
+            return error;
+        }
+        
+        // compare key and expected key
+        if (memcmp(key, full_key, 20) != 0) {
+            printf("Key returned for partial dynamic key is invalid, i = %d\n", i);
+            return E_FILE_READ_ERROR;
+        }
+        
+        // generate the expected value, and compare the partial data and length
+        sprintf(value, "[My data, i = %ld]", (size_t)i);
+        if (memcmp(value, data, 15) != 0) {
+            printf("Data contained in dynamic key is invalid, i = %d\n", i);
+            return E_FILE_READ_ERROR;
+        }
+        if (data_size != strlen(value)) {
+            printf("Data length returned from dynamic key is invalid, i = %d\n", i);
+            return E_FILE_READ_ERROR;
+        }
+        
+        // cleanup
+        free(data);
+    }
+    return E_SUCCESS;
+}
+
 Errors _check_archive(Archive* archive, char* keys, size_t n_items)
 {
     Errors error;
@@ -148,6 +229,16 @@ Errors _check_archive(Archive* archive, char* keys, size_t n_items)
         return error;
     }
     
+    // get static key partial
+    if (E_SUCCESS != (error = _read_key_partial(archive, s_key1, 10))) {
+        printf("Failed to load `s_key1`\n");
+        return error;
+    }
+    if (E_SUCCESS != (error = _read_key_partial(archive, s_key2, 10))) {
+        printf("Failed to load `s_key2`\n");
+        return error;
+    }
+    
     // has dynamic keys
     error = _check_archive_has_dynamic_keys(archive, keys, n_items);
     if (error != E_SUCCESS) {
@@ -160,8 +251,20 @@ Errors _check_archive(Archive* archive, char* keys, size_t n_items)
         return error;
     }
     
+    // get dynamic keys partial
+    error = _check_archive_get_dynamic_keys_partial(archive, keys, n_items);
+    if (error != E_SUCCESS) {
+        return error;
+    }
+    
     // get invalid keys
     error = _check_archive_has_invalid_keys(archive, n_items);
+    if (error != E_SUCCESS) {
+        return error;
+    }
+    
+    // get invalid keys partial
+    error = _check_archive_has_invalid_keys_partial(archive, n_items);
     if (error != E_SUCCESS) {
         return error;
     }
