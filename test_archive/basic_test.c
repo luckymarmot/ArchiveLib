@@ -12,6 +12,7 @@
 
 #include <cmocka.h>
 #include <malloc/malloc.h>
+#include <uuid/uuid.h>
 
 static void test_ArchivePage(void **state) {
     assert_int_equal(sizeof(ArchivePage), 0x28);
@@ -396,6 +397,55 @@ static void test_Archive_add_page_by_name(void **state) {
     Errors e = Archive_add_page_by_name(&archive, filename);
     assert_int_equal(e, -1);
     assert_int_equal(errno, ENOENT);
+
+
+    /// if file is there but it has bad stuff
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char filename2[37]; // ex. "1b4e28ba-2fa1-11d2-883f-0016d3cca427" + "\0"
+    uuid_unparse_lower(uuid, filename2);
+    file_descriptor fd = open(filename2, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    ssize_t er = pwrite(fd, filename2, 12, 0);
+    assert_int_equal(er, 12);
+    er = close(fd);
+    assert_int_equal(er, 0);
+    e = Archive_add_page_by_name(&archive, filename2);
+    // The header has an issue!
+    Archive_free(&archive);
+    assert_int_equal(e, E_FILE_READ_ERROR);
+    fd = open(filename2, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    char somedata[] = "whatiftheydatawaslongerthantheheaderdataifwemakeit"
+            " supper long very very long and very sdfsdfjsjjjjsjjjsjjsjjjs"
+            "long and longer and longer whatiftheydatawaslonge"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rtha"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlkrtha"
+            "ntheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "rthantheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk"
+            "ntheheaderdataifwemaksdflkjkljkljlkljkkjlkljjlk";
+
+    size_t s = strlen(somedata) + 1;
+    er = pwrite(fd, somedata, s, 0);
+    assert_int_equal(er, s);
+    close(fd);
+
+    Archive archive2;
+    Archive_init(&archive2, "./");
+    e = Archive_add_page_by_name(&archive2, filename2);
+    assert_int_equal(e, E_INVALID_ARCHIVE_HEADER);
 }
 
 

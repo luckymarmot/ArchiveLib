@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "Endian.h"
 #include "ArchivePage.h"
@@ -33,6 +34,18 @@ typedef enum ArchiveFileVersion {
 static size_t ArchivePage_index_start = sizeof(ArchiveFileHeader);
 static size_t ArchivePage_data_start = sizeof(ArchiveFileHeader) + (_MAX_ITEMS_PER_INDEX * sizeof(PackedHashItem));
 static size_t ArchivePage_capacity = _MAX_ITEMS_PER_INDEX;
+
+
+
+
+off_t fsize(const char *filename) {
+    struct stat st;
+
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+
+    return -1;
+}
 
 
 #pragma mark Read / Write
@@ -122,6 +135,10 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     
     // read ArchiveFileHeader from file
     ArchiveFileHeader file_header;
+    off_t size = fsize(self->filename);
+    if (size < sizeof(ArchiveFileHeader)) {
+        return E_FILE_READ_ERROR;
+    }
     error = read_from_file(self->fd, &file_header, sizeof(ArchiveFileHeader), 0);
     if (error != E_SUCCESS) {
         return error;
@@ -143,7 +160,8 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     if (index_start != ArchivePage_index_start ||
         data_start != ArchivePage_data_start ||
         capacity != ArchivePage_capacity ||
-        n_items > capacity) {
+        n_items > capacity ||
+        data_size + data_start > size) {
         return E_INVALID_ARCHIVE_HEADER;
     }
     
