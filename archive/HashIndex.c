@@ -40,7 +40,7 @@ static inline void  _HashItem_init_with_key(HashItem*       self,
 static inline void  _HashPage_init(HashPage*                self)
 {
     self->items = (HashItem*)malloc(
-		sizeof(HashItem) * HASH_PAGE_INITIAL_CAPACITY);
+        sizeof(HashItem) * HASH_PAGE_INITIAL_CAPACITY);
     self->capacity = HASH_PAGE_INITIAL_CAPACITY;
     self->n_items = 0;
 }
@@ -61,11 +61,13 @@ static inline void  _HashPage_free(HashPage*                self)
  Retrieves an item from the hash page.
 
  @param self The hash page.
- @param key The key to retrieve.
+ @param partial_key The partial key to lookup (between 3 and 20 bytes).
+ @param partial_key_len The length of the partial key.
  @return The hash item. It's not a copy, the item is still in the page.
  */
 static inline const HashItem* _HashPage_get(HashPage*       self,
-                                            const char*     key)
+                                            const char*     partial_key,
+                                            size_t          partial_key_len)
 {
     size_t n_items = self->n_items;
     HashItem *item = self->items;
@@ -74,28 +76,14 @@ static inline const HashItem* _HashPage_get(HashPage*       self,
         // the first byte doesn't need to be compared as it's in the hash key
         // the two first bytes are compared inline here to reduce the use of
         // memcmp (which is more expensive)
-        if (item_key[1] == key[1] &&
-            item_key[2] == key[2] &&
-            memcmp(item_key + 3, key + 3, 17) == 0) {
+        if (item_key[1] == partial_key[1] &&
+            item_key[2] == partial_key[2] &&
+            memcmp(item_key + 3, partial_key + 3, partial_key_len - 3) == 0) {
             return item;
         }
         item++;
     }
     return NULL;
-}
-
-
-/**
- Checks whether an entry is in the page for the given key.
-
- @param self The hash page.
- @param key The item key.
- @return A boolean representing whether the key is in the hash page.
- */
-static inline bool      _HashPage_has(HashPage*             self,
-                                      const char*           key)
-{
-    return NULL != _HashPage_get(self, key);
 }
 
 
@@ -181,19 +169,12 @@ HashPage* HashIndex_get_or_create_page(HashIndex*     self,
 }
 
 
-bool      HashIndex_has(HashIndex*                    self,
-                        const char*                   key)
-{
-    HashPage* page = _HashIndex_get_page(self, key);
-    return _HashPage_has(page, key);
-}
-
-
 const HashItem* HashIndex_get(HashIndex*              self,
-                              const char*             key)
+                              const char*             partial_key,
+                              size_t                  partial_key_len)
 {
-    HashPage* page = _HashIndex_get_page(self, key);
-    return _HashPage_get(page, key);
+    HashPage* page = _HashIndex_get_page(self, partial_key);
+    return _HashPage_get(page, partial_key, partial_key_len);
 }
 
 
