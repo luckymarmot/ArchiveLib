@@ -12,6 +12,9 @@
 #include "ArchivePage.h"
 #include "HashIndexPack.h"
 
+#include <fcntl.h>
+#include <uuid/uuid.h>
+
 /**
  * A private packed structure for writing archive's file header to file.
  */
@@ -141,10 +144,20 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     
     // read ArchiveFileHeader from file
     ArchiveFileHeader file_header;
-    off_t size = fsize(self->filename);
+
+    char* full_file_path;
+    asprintf(&full_file_path, "%s%s", self->base_file_path, self->filename);
+
+    off_t size = fsize(full_file_path);
     if (size < sizeof(ArchiveFileHeader)) {
+        free(full_file_path);
         return E_FILE_READ_ERROR;
     }
+
+    // Free file path
+    free(full_file_path);
+    full_file_path = NULL;
+
     error = read_from_file(self->fd, &file_header, sizeof(ArchiveFileHeader), 0);
     if (error != E_SUCCESS) {
         return error;
@@ -255,7 +268,17 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self,
     if (new_file) {
         flags |= (O_CREAT | O_EXCL);
     }
-    file_descriptor fd = open(self->filename , flags, S_IRUSR | S_IWUSR);
+
+    char* full_file_path;
+    asprintf(&full_file_path, "%s%s", self->base_file_path, self->filename);
+
+
+    file_descriptor fd = open(full_file_path , flags, S_IRUSR | S_IWUSR);
+
+    // Free full_file_path
+    free(full_file_path);
+    full_file_path = NULL;
+
     if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
@@ -363,21 +386,29 @@ static Errors       ArchivePage_write_item(ArchivePage*     self,
 
 Errors      ArchivePage_init(ArchivePage*           self,
                              const char*            filename,
+                             const char*            base_file_name,
                              bool                   new_file)
 {
     Errors error;
+    size_t str_size = strlen(filename) + 1;
 
     // copy filename to the struct
-    size_t filename_size = strlen(filename) + 1;
-    self->filename = (char*)malloc(filename_size);
-    memcpy(self->filename, filename, filename_size);
+    self->filename = (char*)malloc(str_size);
+    memcpy(self->filename, filename, str_size);
+
+    // get new string size
+    str_size = strlen(base_file_name) + 1;
+    self->base_file_path = (char*)malloc(str_size);
+    memcpy(self->base_file_path, base_file_name, str_size);
 
     // open file descriptor
     error = ArchivePage_open_file(self, new_file);
     if (error != E_SUCCESS) {
         printf("File not opened, error = %s\n", strerror(errno));
         free(self->filename);
+        free(self->base_file_path);
         self->filename = NULL;
+        self->base_file_path = NULL;
         return error;
     }
     
@@ -395,8 +426,10 @@ Errors      ArchivePage_init(ArchivePage*           self,
             ArchivePage_close_file(self);
             free(self->index);
             free(self->filename);
+            free(self->base_file_path);
             self->index = NULL;
             self->filename = NULL;
+            self->base_file_path = NULL;
             return error;
         }
     }
@@ -411,20 +444,57 @@ void        ArchivePage_free(ArchivePage*           self)
     HashIndex_free(self->index);
     free(self->index);
     free(self->filename);
+    free(self->base_file_path);
     self->index = NULL;
     self->filename = NULL;
+    self->base_file_path = NULL;
 }
 
 
 Errors      ArchivePage_save(ArchivePage*           self)
 {
     Errors error;
-    
+    uuid_t uuid;
+    char* full_new_path;
+    char* full_old_path;
+    char* new_filename;
+
     // skip write if there are no changes
     if (!self->has_changes) {
         return E_SUCCESS;
     }
-    
+
+    // Build old file path
+    asprintf(&full_old_path, "%s%s", self->base_file_path, self->filename);
+
+    // Compute new file name
+
+    new_filename = malloc(sizeof(char) * 37);
+
+    uuid_generate_random(uuid);
+    uuid_unparse_lower(uuid, new_filename);
+
+    // Combine file path to full path
+    asprintf(&full_new_path, "%s%s", self->base_file_path, new_filename);
+
+    // Rename the current file
+    int er = rename(full_old_path, full_new_path);
+
+    if (er < 0) {
+        free(new_filename);
+        free(full_new_path);
+        free(full_old_path);
+        return E_SYSTEM_ERROR_ERRNO;
+    }
+
+    char* oldfname = self->filename;
+
+    self->filename = new_filename;
+
+    free(oldfname);
+    free(full_new_path);
+    free(full_old_path);
+
     // write the file header
     error = ArchivePage_write_file_header(self);
     if (error != E_SUCCESS) {

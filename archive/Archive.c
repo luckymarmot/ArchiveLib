@@ -92,10 +92,6 @@ static inline Errors    Archive_add_page(Archive*       self,
                                          const char*    filename,
                                          bool           new_file)
 {
-    // build full file path
-    char* filepath;
-    asprintf(&filepath, "%s%s", self->base_file_path, filename);
-    
     // make sure we have enough space, or we realloc
     if (self->n_pages >= self->capacity) {
         size_t new_capacity = self->capacity * 2;
@@ -105,9 +101,8 @@ static inline Errors    Archive_add_page(Archive*       self,
 
     // create the page struct
     ArchivePage* page = &(self->pages[self->n_pages]);
-    Errors error = ArchivePage_init(page, filepath, new_file);
+    Errors error = ArchivePage_init(page, filename, self->base_file_path, new_file);
     if (error != E_SUCCESS) {
-        free(filepath);
         return error;
     }
     
@@ -115,9 +110,7 @@ static inline Errors    Archive_add_page(Archive*       self,
     self->n_pages += 1;
     
     // free filepath
-    free(filepath);
-    filepath = NULL;
-   
+
     return E_SUCCESS;
 }
 

@@ -15,7 +15,7 @@
 #include <uuid/uuid.h>
 
 static void test_ArchivePage(void **state) {
-    assert_int_equal(sizeof(ArchivePage), 0x28);
+    assert_int_equal(sizeof(ArchivePage), 0x30);
 }
 
 
@@ -219,7 +219,7 @@ static void test_Archive_set(void **state) {
 
     Archive archive2;
     Archive_init(&archive2, "./");
-    Errors e = Archive_add_page_by_name(&archive2, saves.files[0].filename + 2);
+    Errors e = Archive_add_page_by_name(&archive2, saves.files[0].filename);
     assert_int_equal(e, 0);
 
     assert_true(Archive_has(&archive2, key));
@@ -246,9 +246,74 @@ static void test_Archive_set(void **state) {
     ///// Test that the the data was saved to the latest archive.
     Archive archive3;
     Archive_init(&archive3, "./");
-    e = Archive_add_page_by_name(&archive3, saves.files[0].filename+2);
+    e = Archive_add_page_by_name(&archive3, saves.files[0].filename);
     assert_int_equal(e, 0);
     assert_false(Archive_has(&archive3, key));
+}
+
+
+static void test_Archive_save_rename(void **state) {
+    Archive archive;
+    Archive_init(&archive, "./");
+    Archive_add_empty_page(&archive);
+
+    char key[20] = {
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100
+    };
+
+    assert_false(Archive_has(&archive, key));
+
+
+    char* data = "data";
+
+    Errors error = Archive_set(&archive, key, data, 5);
+
+    assert_int_equal(error, 0);
+    assert_true(Archive_has(&archive, key));
+
+    ArchiveSaveResult saves;
+
+    Archive_save(&archive, &saves);
+
+    Archive_free(&archive);
+
+    Archive archive2;
+    Archive_init(&archive2, "./");
+    Archive_add_page_by_name(&archive2, saves.files[0].filename);
+
+    ArchiveSaveResult saves2;
+
+    Archive_save(&archive2, &saves2);
+
+    assert_string_equal(saves2.files[0].filename, saves.files[0].filename);
+
+    ArchiveSaveResult saves3;
+
+    Archive archive3;
+    Archive_init(&archive3, "./");
+    Archive_add_page_by_name(&archive3, saves2.files[0].filename);
+
+
+    char key2[20] = {
+            101, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100
+    };
+
+    error = Archive_set(&archive3, key2, data, 5);
+    assert_int_equal(error, 0);
+
+    Archive_save(&archive3, &saves3);
+
+    assert_string_not_equal(saves.files[0].filename, saves3.files[0].filename);
+    int fd = open(saves.files[0].filename, O_RDWR);
+    assert_int_equal(fd, -1);
+    fd = open(saves3.files[0].filename, O_RDWR);
+    assert_true(fd > -1);
+    close(fd);
+
 }
 
 
@@ -556,7 +621,8 @@ int main(void) {
             cmocka_unit_test(test_Archive_has),
             cmocka_unit_test(test_Archive_set),
             cmocka_unit_test(test_Archive_set__index_inserts),
-            cmocka_unit_test(test_Archive_add_page_by_name)
+            cmocka_unit_test(test_Archive_add_page_by_name),
+            cmocka_unit_test(test_Archive_save_rename)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
