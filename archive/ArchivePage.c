@@ -489,7 +489,7 @@ Errors      ArchivePage_save(ArchivePage*           self)
 
     char* oldfname = self->filename;
 
-    self->filename = filename;
+    self->filename = new_filename;
 
     free(oldfname);
     free(full_new_path);
