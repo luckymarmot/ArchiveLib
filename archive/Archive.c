@@ -101,7 +101,7 @@ static inline Errors    Archive_add_page(Archive*       self,
 
     // create the page struct
     ArchivePage* page = &(self->pages[self->n_pages]);
-    Errors error = ArchivePage_init(page, filename, self->base_file_path, new_file);
+    Errors error = ArchivePage_init(page, filename, &self->base_file_path, new_file);
     if (error != E_SUCCESS) {
         return error;
     }

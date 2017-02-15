@@ -153,7 +153,11 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
         free(full_file_path);
         return E_FILE_READ_ERROR;
     }
+
+    // Free file path
     free(full_file_path);
+    full_file_path = NULL;
+
     error = read_from_file(self->fd, &file_header, sizeof(ArchiveFileHeader), 0);
     if (error != E_SUCCESS) {
         return error;
@@ -270,7 +274,11 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self,
 
 
     file_descriptor fd = open(full_file_path , flags, S_IRUSR | S_IWUSR);
+
+    // Free full_file_path
     free(full_file_path);
+    full_file_path = NULL;
+
     if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
@@ -382,15 +390,16 @@ Errors      ArchivePage_init(ArchivePage*           self,
                              bool                   new_file)
 {
     Errors error;
+    size_t str_size = strlen(filename) + 1;
 
     // copy filename to the struct
-    size_t filename_size = strlen(filename) + 1;
-    self->filename = (char*)malloc(filename_size);
-    memcpy(self->filename, filename, filename_size);
+    self->filename = (char*)malloc(str_size);
+    memcpy(self->filename, filename, str_size);
 
-    filename_size = strlen(base_file_name) + 1;
-    self->base_file_path = (char*)malloc(filename_size);
-    memcpy(self->base_file_path, base_file_name, filename_size);
+    // get new string size
+    str_size = strlen(base_file_name) + 1;
+    self->base_file_path = (char*)malloc(str_size);
+    memcpy(self->base_file_path, base_file_name, str_size);
 
     // open file descriptor
     error = ArchivePage_open_file(self, new_file);
@@ -445,31 +454,34 @@ void        ArchivePage_free(ArchivePage*           self)
 Errors      ArchivePage_save(ArchivePage*           self)
 {
     Errors error;
-    
+    uuid_t uuid;
+    char* full_new_path;
+    char* full_old_path;
+    char* new_filename;
+
     // skip write if there are no changes
     if (!self->has_changes) {
         return E_SUCCESS;
     }
 
-    // change file name
-
-    uuid_t uuid;
-    uuid_generate_random(uuid);
-    char* filename = malloc(sizeof(char) * 37);
-    char* full_new_path;
-    char* full_old_path;
-
-
-    uuid_unparse_lower(uuid, filename);
-
-    asprintf(&full_new_path, "%s%s", self->base_file_path, filename);
+    // Build old file path
     asprintf(&full_old_path, "%s%s", self->base_file_path, self->filename);
 
+    // Compute new file name
 
+    new_filename = malloc(sizeof(char) * 37);
+
+    uuid_generate_random(uuid);
+    uuid_unparse_lower(uuid, new_filename);
+
+    // Combine file path to full path
+    asprintf(&full_new_path, "%s%s", self->base_file_path, new_filename);
+
+    // Rename the current file
     int er = rename(full_old_path, full_new_path);
 
     if (er < 0) {
-        free(filename);
+        free(new_filename);
         free(full_new_path);
         free(full_old_path);
         return E_SYSTEM_ERROR_ERRNO;
