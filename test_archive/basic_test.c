@@ -15,7 +15,7 @@
 #include <uuid/uuid.h>
 
 static void test_ArchivePage(void **state) {
-    assert_int_equal(sizeof(ArchivePage), 0x28);
+    assert_int_equal(sizeof(ArchivePage), 0x30);
 }
 
 
@@ -219,7 +219,7 @@ static void test_Archive_set(void **state) {
 
     Archive archive2;
     Archive_init(&archive2, "./");
-    Errors e = Archive_add_page_by_name(&archive2, saves.files[0].filename + 2);
+    Errors e = Archive_add_page_by_name(&archive2, saves.files[0].filename);
     assert_int_equal(e, 0);
 
     assert_true(Archive_has(&archive2, key));
@@ -246,7 +246,7 @@ static void test_Archive_set(void **state) {
     ///// Test that the the data was saved to the latest archive.
     Archive archive3;
     Archive_init(&archive3, "./");
-    e = Archive_add_page_by_name(&archive3, saves.files[0].filename+2);
+    e = Archive_add_page_by_name(&archive3, saves.files[0].filename);
     assert_int_equal(e, 0);
     assert_false(Archive_has(&archive3, key));
 }

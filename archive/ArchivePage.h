@@ -30,6 +30,7 @@ typedef struct ArchivePage
     size_t                  data_size;
     file_descriptor         fd;
     char*                   filename;
+    char*                   base_file_path;
     bool                    has_changes;
 } ArchivePage;
 
@@ -44,6 +45,7 @@ typedef struct ArchivePage
  */
 Errors      ArchivePage_init(ArchivePage*           self,
                              const char*            filename,
+                             const char*            base_file_name,
                              bool                   new_file);
 
 

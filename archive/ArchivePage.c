@@ -12,6 +12,9 @@
 #include "ArchivePage.h"
 #include "HashIndexPack.h"
 
+#include <fcntl.h>
+#include <uuid/uuid.h>
+
 /**
  * A private packed structure for writing archive's file header to file.
  */
@@ -141,10 +144,16 @@ static inline Errors    ArchivePage_read_file_header(ArchivePage*       self)
     
     // read ArchiveFileHeader from file
     ArchiveFileHeader file_header;
-    off_t size = fsize(self->filename);
+
+    char* full_file_path;
+    asprintf(&full_file_path, "%s%s", self->base_file_path, self->filename);
+
+    off_t size = fsize(full_file_path);
     if (size < sizeof(ArchiveFileHeader)) {
+        free(full_file_path);
         return E_FILE_READ_ERROR;
     }
+    free(full_file_path);
     error = read_from_file(self->fd, &file_header, sizeof(ArchiveFileHeader), 0);
     if (error != E_SUCCESS) {
         return error;
@@ -255,7 +264,13 @@ static inline Errors    ArchivePage_open_file(ArchivePage*      self,
     if (new_file) {
         flags |= (O_CREAT | O_EXCL);
     }
-    file_descriptor fd = open(self->filename , flags, S_IRUSR | S_IWUSR);
+
+    char* full_file_path;
+    asprintf(&full_file_path, "%s%s", self->base_file_path, self->filename);
+
+
+    file_descriptor fd = open(full_file_path , flags, S_IRUSR | S_IWUSR);
+    free(full_file_path);
     if (fd < 0) {
         return E_SYSTEM_ERROR_ERRNO;
     }
@@ -363,6 +378,7 @@ static Errors       ArchivePage_write_item(ArchivePage*     self,
 
 Errors      ArchivePage_init(ArchivePage*           self,
                              const char*            filename,
+                             const char*            base_file_name,
                              bool                   new_file)
 {
     Errors error;
@@ -372,12 +388,18 @@ Errors      ArchivePage_init(ArchivePage*           self,
     self->filename = (char*)malloc(filename_size);
     memcpy(self->filename, filename, filename_size);
 
+    filename_size = strlen(base_file_name) + 1;
+    self->base_file_path = (char*)malloc(filename_size);
+    memcpy(self->base_file_path, base_file_name, filename_size);
+
     // open file descriptor
     error = ArchivePage_open_file(self, new_file);
     if (error != E_SUCCESS) {
         printf("File not opened, error = %s\n", strerror(errno));
         free(self->filename);
+        free(self->base_file_path);
         self->filename = NULL;
+        self->base_file_path = NULL;
         return error;
     }
     
@@ -395,8 +417,10 @@ Errors      ArchivePage_init(ArchivePage*           self,
             ArchivePage_close_file(self);
             free(self->index);
             free(self->filename);
+            free(self->base_file_path);
             self->index = NULL;
             self->filename = NULL;
+            self->base_file_path = NULL;
             return error;
         }
     }
@@ -411,8 +435,10 @@ void        ArchivePage_free(ArchivePage*           self)
     HashIndex_free(self->index);
     free(self->index);
     free(self->filename);
+    free(self->base_file_path);
     self->index = NULL;
     self->filename = NULL;
+    self->base_file_path = NULL;
 }
 
 
@@ -424,7 +450,39 @@ Errors      ArchivePage_save(ArchivePage*           self)
     if (!self->has_changes) {
         return E_SUCCESS;
     }
-    
+
+    // change file name
+
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char* filename = malloc(sizeof(char) * 37);
+    char* full_new_path;
+    char* full_old_path;
+
+
+    uuid_unparse_lower(uuid, filename);
+
+    asprintf(&full_new_path, "%s%s", self->base_file_path, filename);
+    asprintf(&full_old_path, "%s%s", self->base_file_path, self->filename);
+
+
+    int er = rename(full_old_path, full_new_path);
+
+    if (er < 0) {
+        free(filename);
+        free(full_new_path);
+        free(full_old_path);
+        return E_SYSTEM_ERROR_ERRNO;
+    }
+
+    char* oldfname = self->filename;
+
+    self->filename = filename;
+
+    free(oldfname);
+    free(full_new_path);
+    free(full_old_path);
+
     // write the file header
     error = ArchivePage_write_file_header(self);
     if (error != E_SUCCESS) {
