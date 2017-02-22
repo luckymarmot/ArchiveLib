@@ -14,6 +14,8 @@
 
 #include <fcntl.h>
 #include <uuid/uuid.h>
+#include <sys/file.h>
+
 
 /**
  * A private packed structure for writing archive's file header to file.
