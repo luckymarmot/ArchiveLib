@@ -21,7 +21,8 @@ void        Archive_free(Archive*                 self)
 {
     // free all pages
     size_t n_pages = self->n_pages;
-    for (size_t i = 0; i < n_pages; i++) {
+    size_t i;
+    for (i = 0; i < n_pages; i++) {
         ArchivePage_free(&(self->pages[i]));
     }
     free(self->pages);
@@ -56,9 +57,9 @@ Errors      Archive_save(const Archive*           self,
     
     // alloc a number of ArchiveSaveFile
     result->files = (ArchiveSaveFile*)malloc(sizeof(ArchiveSaveFile) * n_pages);
-
+    size_t i;
     // save all pages
-    for (size_t i = 0; i < n_pages; i++) {
+    for (i = 0; i < n_pages; i++) {
         page = self->pages + i;
         file = result->files + i;
         has_changes = page->has_changes;
@@ -139,7 +140,8 @@ bool                Archive_has_partial(const Archive*      self,
                                         size_t              partial_key_len,
                                         char*               key)
 {
-    for (long long i = self->n_pages - 1; i >= 0; i--) {
+    long long i;
+    for (i = self->n_pages - 1; i >= 0; i--) {
         if (ArchivePage_has(self->pages + i, partial_key, partial_key_len, key)) {
             return true;
         }
@@ -157,8 +159,8 @@ Errors              Archive_get_partial(const Archive*      self,
                                         size_t*             _data_size)
 {
     Errors error;
-    
-    for (long long i = self->n_pages - 1; i >= 0; i--) {
+    long long i;
+    for (i = self->n_pages - 1; i >= 0; i--) {
         // lookup in an archive
         error = ArchivePage_get(self->pages + i, partial_key, partial_key_len, key, data_max_size, _data, _data_size);
         // if success or an error that isn't "not found" stop

@@ -19,7 +19,8 @@ static inline void ArchiveSaveResult_free(ArchiveSaveResult*	result)
 {
     ArchiveSaveFile* file;
     size_t count = result->count;
-    for (size_t i = 0; i < count; i++) {
+    size_t i;
+    for (i = 0; i < count; i++) {
         file = &(result->files[i]);
         free(file->filename);
     }
@@ -33,7 +34,8 @@ static inline void ArchiveSaveResult_print(ArchiveSaveResult*	result)
 {
     ArchiveSaveFile* file;
     size_t count = result->count;
-    for (int i = 0; i < count; i++) {
+    int i;
+    for (i = 0; i < count; i++) {
         file = &(result->files[i]);
         printf("Archive file [%s] = %s\n", (file->has_changes ? " changed " : "no change"), file->filename);
     }

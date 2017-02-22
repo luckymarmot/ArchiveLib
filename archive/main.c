@@ -45,7 +45,8 @@ Errors _set_data_n(Archive* archive, size_t n_items, char** _keys)
 {
     Errors error;
     char* keys = (char*)malloc(sizeof(char) * 20 * n_items);
-    for (int i = 0; i < n_items; i++) {
+    int i;
+    for (i = 0; i < n_items; i++) {
         error = _set_data(archive, keys + (20 * i), i);
         if (error != E_SUCCESS) {
             free(keys);
@@ -99,7 +100,8 @@ static inline Errors _read_key_partial(Archive* archive, const char* partial_key
 Errors _check_archive_has_invalid_keys(Archive* archive, size_t n_items)
 {
     char key[20];
-    for (int i = 0; i < 100000; i++) {
+    int i;
+    for (i = 0; i < 100000; i++) {
         rand_key(key);
         if (Archive_has(archive, key)) {
             printf("Failed on has() invalid key (shouldn't have been found), i = %d\n", i);
@@ -112,7 +114,8 @@ Errors _check_archive_has_invalid_keys(Archive* archive, size_t n_items)
 Errors _check_archive_has_invalid_keys_partial(Archive* archive, size_t n_items)
 {
     char partial_key[20];
-    for (int i = 0; i < 100000; i++) {
+    int i;
+    for (i = 0; i < 100000; i++) {
         rand_key(partial_key);
         if (Archive_has_partial(archive, partial_key, 12, NULL)) {
             printf("Failed on has() invalid key (shouldn't have been found), i = %d\n", i);
@@ -124,7 +127,8 @@ Errors _check_archive_has_invalid_keys_partial(Archive* archive, size_t n_items)
 
 Errors _check_archive_has_dynamic_keys(Archive* archive, char* keys, size_t n_items)
 {
-    for (int i = 0; i < n_items; i++) {
+    int i;
+    for (i = 0; i < n_items; i++) {
         char* key = keys + (20 * i);
         if (!Archive_has(archive, key)) {
             printf("Failed on has() dynamic key (not found), i = %d\n", i);
@@ -141,7 +145,8 @@ Errors _check_archive_get_dynamic_keys(Archive* archive, char* keys, size_t n_it
     char value[256];
     char* data;
     size_t data_size;
-    for (int i = 0; i < n_items; i++) {
+    int i;
+    for (i = 0; i < n_items; i++) {
         key = keys + (20 * i);
         error = Archive_get(archive, key, &data, &data_size);
         if (error != E_SUCCESS) {
@@ -167,7 +172,8 @@ Errors _check_archive_get_dynamic_keys_partial(Archive* archive, char* keys, siz
     char value[256];
     char* data;
     size_t data_size;
-    for (int i = 0; i < n_items; i++) {
+    int i;
+    for (i = 0; i < n_items; i++) {
         // get full key
         key = keys + (20 * i);
         
@@ -356,7 +362,8 @@ Errors _build_archive(char** _filenames, size_t* _n_files, char** _keys, size_t 
     
     // copy archive names
     char* new_filenames = malloc(sizeof(char) * 256 * result.count);
-    for (int i = 0; i < result.count; i++) {
+    int i;
+    for (i = 0; i < result.count; i++) {
         strcpy(new_filenames + (256 * i), result.files[i].filename);
     }
     *_filenames = new_filenames;
@@ -377,7 +384,8 @@ Errors _read_archive(char* filenames, size_t n_files, char* keys, size_t n_items
     Archive_init(&archive, "./");
     
     // add pages
-    for (int i = 0; i < n_files; i++) {
+    int i;
+    for (i = 0; i < n_files; i++) {
         char* filename = filenames + (256 * i);
         printf("Add page %s\n", filename);
         error = Archive_add_page_by_name(&archive, filename);

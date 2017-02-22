@@ -71,7 +71,8 @@ static inline const HashItem* _HashPage_get(HashPage*       self,
 {
     size_t n_items = self->n_items;
     HashItem *item = self->items;
-    for (int i = 0; i < n_items; ++i) {
+    int i;
+    for (i = 0; i < n_items; ++i) {
         char* item_key = item->key;
         // the first byte doesn't need to be compared as it's in the hash key
         // the two first bytes are compared inline here to reduce the use of
@@ -149,7 +150,8 @@ void      HashIndex_init(HashIndex*                   self)
 void      HashIndex_free(HashIndex*                   self)
 {
     HashPage* page;
-    for (int i = 0; i < HashIndexPageCount; ++i) {
+    int i;
+    for (i = 0; i < HashIndexPageCount; ++i) {
         page = &(self->pages[i]);
         if (page->items != NULL) {
             _HashPage_free(page);
