@@ -21,7 +21,7 @@
 #define be32toh(v) bswap32(v)
 #define htobe32(v) bswap32(v)
 
-#elif (defined(__BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(_BIG_ENDIAN)))
+#elif (defined(__BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(_BIG_ENDIAN))
 
 #define be32toh(v) (v)
 #define htobe32(v) (v)
