@@ -16,18 +16,18 @@
           | (((uint32_t)(v) >> 24)))
 #endif
 
-#if (defined(__LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__) || defined(_LITTLE_ENDIAN))
-
+//#if (defined(__LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__) || defined(_LITTLE_ENDIAN))
+// Assuming LITTLE_ENDIAN!
 #define be32toh(v) bswap32(v)
 #define htobe32(v) bswap32(v)
 
-#elif (defined(__BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(_BIG_ENDIAN))
-
-#define be32toh(v) (v)
-#define htobe32(v) (v)
-
-#else
-#error Endian not supported
-#endif
+//#elif (defined(__BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(_BIG_ENDIAN))
+//
+//#define be32toh(v) (v)
+//#define htobe32(v) (v)
+//
+//#else
+//#error Endian not supported
+//#endif
 
 #endif /* ENDIAN_H */
